@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="/static/js/scripts.js"></script> 
+    <meta charset="UTF-8">
+    <title>{{title}}</title>
+</head>
+<body>
+    <h1>{{ title }}</h1>
+    
+    <input type="button" onclick="location.href='/';" value="All students" />
+    <input type="button" onclick="location.href='/incomplete';" value="Incomplete work" />
+    {% for classroom in classrooms %}
+        <br>
+        <hl>
+        <h2>{{ classroom.classroom_name }} {% if classroom.filtered_students %} ({{ classroom.filtered_students| length }}/ {{ classroom.students | length }}) {% endif %}</h2>
+        <table>
+        
+        <tr>
+            <th>Name</th>
+            {% for assignment in classroom.assignments_sorted %}
+                <th>{{ assignment.exercise_code }}</th>
+            {% endfor %}
+        </tr>
+        {% for student in classroom.selected_students %}
+             <tr>
+             <td width="250px"><a target="_blank" href="https://repl.it/teacher/classrooms/{{classroom.classroom_id}}/students/{{student.student_id}}">{{ student.student_first_name }} {{ student.student_surname }}</a></td>
+             
+            {% for submission in student.submissions_sorted %}
+                 <td><a target="_blank" href="https://repl.it/teacher/submissions/{{ submission.submission_id }}">{{ submission.completed_symbol }}</a></td>
+            {% endfor %}
+             </tr>
+        {% endfor %}
+        {% if email %}
+            <h4>Email addresses</h4>
+            <p>
+            {% for student in classroom.selected_students %}
+                {{ student.student_email }};
+            {% endfor %}
+            </p>
+        {% endif %}
+        </table>
+    {% endfor %}
+</body>
+</html>
