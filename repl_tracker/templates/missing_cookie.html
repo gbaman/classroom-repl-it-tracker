@@ -5,14 +5,26 @@
     <title>Cookie missing!</title>
 </head>
 <body>
+
+<h2>No cookie found for accessing repl.it</h2>
+<input type="button" onclick="get_cookie()" value="Click me to input cookies" />
+<br>
+<p>To get the cookie data, go over to repl.it, then launch developer tools (cmd or ctrl + alt + i).</p>
+<p>With the network tab selected, open a classroom and "projects" will appear in the network list. Select this.</p>
+<p>In the "request headers", find "cookie" and copy the contents of it (should start with ___cfduid).</p>
+<p>Finally hit the button above and paste in the cookie data.</p>
 <script>
-    var repl_cookie = prompt("The cookie needed from repl.it has expired, please paste it in again.", "");
-    if (repl_cookie == null || repl_cookie == "") {
-        location.reload();
-    } else {
-        repl_cookie.split(";").forEach(element => document.cookie = element);
-        window.location.href ="/"
-    } 
+    
+    function get_cookie() {
+        var repl_cookie = prompt("The cookie needed from repl.it has expired, please paste it in again.", "");
+            if (repl_cookie == null || repl_cookie == "") {
+                location.reload();
+            } else {
+                repl_cookie.split(";").forEach(element => document.cookie = element);
+                window.location.href ="/"
+            } 
+    }
+    
 </script>
 </body>
 </html>

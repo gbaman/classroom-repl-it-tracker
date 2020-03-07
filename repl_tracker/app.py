@@ -1,3 +1,5 @@
+import traceback
+
 from flask import Flask, render_template, request, make_response
 
 import repl
@@ -7,7 +9,7 @@ app = Flask(__name__)
 
 
 def check_cookie():
-    if "connect.sid" in request.cookies:
+    if "ajs_user_id" in request.cookies:
         cookie_to_return = ""
         for cookie in request.cookies.items():
             cookie_to_return = f"{cookie_to_return}{cookie[0]}={cookie[1]};"
@@ -25,6 +27,7 @@ def hello_world():
             classrooms = repl.setup_classrooms(cookie)
             return render_template("main.html", classrooms=classrooms, title="All Student Data")
         except:
+            print(traceback.print_exc())
             resp.set_cookie("ajs_user_id", "", expires=0)
             resp.set_cookie("connect.sid", "", expires=0)
     return resp
@@ -51,6 +54,7 @@ def show_only_required():
                 classroom.filtered_students = students_missing_work
             return render_template("main.html", classrooms=classrooms, title="Students with incomplete work", email=True)
         except:
+            print(traceback.print_exc())
             resp.set_cookie("ajs_user_id", "", expires=0)
             resp.set_cookie("connect.sid", "", expires=0)
     return resp
