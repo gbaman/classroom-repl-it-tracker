@@ -52,6 +52,10 @@ class Assignment():
     def exercise_code(self):
         return self.assignment_name.split(" - ")[0]
 
+    def clone(self, new_classroom_id):
+        data = requests.post(url=f"https://repl.it/data/assignments/{self.assignment_id}/clone", headers=headers, data={"classroomId":new_classroom_id})
+        print(f"Assignment {self.assignment_name} copied to {new_classroom_id}")
+
 
 class Student():
 
