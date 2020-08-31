@@ -1,11 +1,14 @@
+import os
 import traceback
 
-from flask import Flask, render_template, request, make_response
+from flask import Flask, render_template, request, make_response, redirect, flash
 
+import forms
 import repl
 from config import required_exercise_ids
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24)
 
 
 def check_cookie():
@@ -18,8 +21,8 @@ def check_cookie():
         return False
 
 
-@app.route('/')
-def hello_world():
+@app.route('/old_landing')
+def old_landing():
     cookie = check_cookie()
     resp = make_response(render_template("missing_cookie.html"))
     if cookie:
@@ -31,6 +34,23 @@ def hello_world():
             resp.set_cookie("ajs_user_id", "", expires=0)
             resp.set_cookie("connect.sid", "", expires=0)
     return resp
+
+@app.route("/")
+def home():
+    cookies = check_cookie()
+    resp = make_response()
+    if not cookies:
+        flash("Login credentials expired, please log in again", "warning")
+        return redirect("/login")
+    else:
+        try:
+            classrooms = repl.setup_classrooms(cookies)
+            return render_template("main.html", classrooms=classrooms, title="All Student Data")
+        except:
+            print(traceback.print_exc())
+            resp.set_cookie("ajs_user_id", "", expires=0)
+            resp.set_cookie("connect.sid", "", expires=0)
+
 
 
 @app.route("/incomplete")
@@ -59,6 +79,26 @@ def show_only_required():
             resp.set_cookie("connect.sid", "", expires=0)
     return resp
 
+@app.route("/login", methods=['POST', 'GET'])
+def login():
+    cookie_value = request.cookies.get("repl_token")
+    if cookie_value:
+        valid = True
+        if valid:
+            return redirect('/')
+
+    form = forms.LoginForm(request.form)
+    if request.method == 'POST' and form.validate():
+        cookies = repl.get_login_cookie(form.username.data, form.password.data)
+        if cookies:
+            resp = make_response(redirect('/'))
+            for key in cookies.keys():
+                resp.set_cookie(str(key), str(cookies[key]))
+            return resp
+        flash("Login failed. This may be due to issues with the credentials, or you need to log into repl.it as usual on your computer at least once.", "danger")
+        return render_template("login.html", form=form, title="Login")
+    return render_template("login.html", next=next, form=form, title="Login")
+
 
 if __name__ == '__main__':
-    app.run()
+    app.run(port=4999)

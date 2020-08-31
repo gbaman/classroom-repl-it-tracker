@@ -174,3 +174,12 @@ def setup_classrooms(browser_cookie) -> List[Classroom]:
         for job in jobs:
             classrooms.append(job.result())
         return classrooms
+
+
+def get_login_cookie(username, password):
+    response = requests.post(url="https://repl.it/login", headers={"x-requested-with":"XMLHttpRequest", "Referer":"https://repl.it/login"}, data={"username":username, "password":password, "teacher":False})
+    if response.ok:
+        cookies = {"__cfduid":response.cookies.get("__cfduid"), "ajs_user_id":response.json()["id"], "connect.sid":response.cookies.get("connect.sid")}
+        return cookies
+    else:
+        return response.ok

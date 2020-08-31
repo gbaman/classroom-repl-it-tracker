@@ -1,19 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <link rel="stylesheet" href="/static/css/styles.css">
-    <script src="/static/js/scripts.js"></script> 
-    <meta charset="UTF-8">
-    <title>{{title}}</title>
-</head>
-<body>
+{% extends "layout.html" %}
+
+{% block content %}
     <h1>{{ title }}</h1>
     
     <input type="button" onclick="location.href='/';" value="All students" />
     <input type="button" onclick="location.href='/incomplete';" value="Incomplete work" />
     {% for classroom in classrooms %}
         <br>
-        <hl>
+        <hr>
         <h2>{{ classroom.classroom_name }} {% if classroom.filtered_students %} ({{ classroom.filtered_students| length }}/ {{ classroom.students | length }}) {% endif %}</h2>
         <table>
         
@@ -42,5 +36,4 @@
         {% endif %}
         </table>
     {% endfor %}
-</body>
-</html>
+{% endblock %}

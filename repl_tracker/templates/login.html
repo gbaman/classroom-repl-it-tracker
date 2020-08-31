@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+
+{% block content %}
+            <h2>Login</h2>
+            <p>Enter repl.it credentials below, to allow Repl Classroom Manager to access your classes.</p>
+            <form method=post style="max-width: 220px">
+                <dl>
+                    {{ render_field(form.username, class="form-control") }}
+                    {{ render_field(form.password, class="form-control") }}
+                </dl>
+                <p><input class="btn btn-primary" type=submit value="Login"></p>
+                <input type=hidden value="{{ next or '' }}" name=next>
+            </form>
+            {%include '_message_flash_helper.html'%}
+{% endblock %}
