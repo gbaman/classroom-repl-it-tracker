@@ -156,6 +156,9 @@ class Classroom():
             return self.filtered_students
         return self.students
 
+    def add_co_teacher(self, email):
+        data = requests.post(url=f"https://repl.it/data/teacher/classrooms/{self.classroom_id}/teaching_assistant_invites/create", headers=headers, data={"emails[]": email})
+        return data
 
 def build_classroom(classroom_id):
     print(f"Fetching data for {classroom_id}!")
@@ -164,7 +167,7 @@ def build_classroom(classroom_id):
 
 def setup_classrooms(browser_cookie) -> List[Classroom]:
     global headers
-    headers = {"cookie": browser_cookie}
+    headers = {"cookie": browser_cookie, "x-requested-with":"XMLHttpRequest", "Referer":"https://repl.it/login"}
     cookie = browser_cookie
     classrooms = []
     with concurrent.futures.ThreadPoolExecutor() as executor:
