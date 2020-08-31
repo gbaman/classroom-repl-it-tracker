@@ -2,8 +2,9 @@ import concurrent.futures
 from typing import List
 
 import requests
+from flask import request, g
 
-from config import classroom_ids
+from config import classroom_ids, master_classroom
 
 headers = {}
 
@@ -42,19 +43,38 @@ class Submission():
 
 class Assignment():
 
-    def __init__(self, assignment_id, assignment_name, classroom):
+    def __init__(self, assignment_id, assignment_name, classroom, time_published):
         self.assignment_id = assignment_id
         self.assignment_name = assignment_name
         self.classroom: Classroom = classroom
+        if time_published:
+            self.draft = False
+        else:
+            self.draft = True
         self.submissions = []
 
     @property
     def exercise_code(self):
         return self.assignment_name.split(" - ")[0]
 
-    def clone(self, new_classroom_id):
+    def _clone(self, new_classroom_id):
         data = requests.post(url=f"https://repl.it/data/assignments/{self.assignment_id}/clone", headers=headers, data={"classroomId":new_classroom_id})
         print(f"Assignment {self.assignment_name} copied to {new_classroom_id}")
+
+    def safe_clone(self, classroom):
+        for assignment in classroom.assignments:
+            if assignment.assignment_name == self.assignment_name:
+                print(f"Failed to copy assignment {assignment.assignment_name} to {classroom.classroom_name} as it already exists there!")
+                break
+        else:
+            self._clone(classroom.classroom_id)
+
+    def publish(self):
+        if self.draft:
+            data = requests.post(url=f"https://repl.it/data/teacher/assignments/{self.assignment_id}/publish", headers=headers)
+            print(f"Published {self.assignment_name} to {self.classroom.classroom_name}.")
+        else:
+            print(f"Failed to publish {self.assignment_name} to {self.classroom.classroom_name} because it is already published!")
 
 
 class Student():
@@ -90,13 +110,19 @@ class Classroom():
 
     def __init__(self, classroom_id):
         self.classroom_id = classroom_id
-        self._get_details()
         self.assignments: List[Assignment] = []
         self.students: List[Student] = []
         self.filtered_students: List[Student] = []
         self.submissions: List[Submission] = []
-        self._get_assignments()
-        self._get_students()
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            jobs = []
+            jobs.append(executor.submit(self._get_details()))
+            jobs.append(executor.submit(self._get_assignments))
+            jobs.append(executor.submit(self._get_students))
+            jobs.append(executor.submit(self._get_submissions_raw_data()))
+
+        #self._get_assignments()
+        #self._get_students()
         self._get_submissions()
 
     def _get_details(self):
@@ -106,7 +132,7 @@ class Classroom():
     def _get_assignments(self):
         data = requests.get(f"https://repl.it/data/classrooms/{self.classroom_id}/assignments", headers=headers).json()
         for assignment in data:
-            self.assignments.append(Assignment(assignment["id"], assignment["name"], self))
+            self.assignments.append(Assignment(assignment["id"], assignment["name"], self, assignment["time_published"]))
 
     def _setup_for_student_submissions(self):
         for student in self.students:
@@ -120,9 +146,13 @@ class Classroom():
         for student in data:
             self.students.append(Student(student["id"], student["first_name"], student["last_name"], student["email"]))
 
+    def _get_submissions_raw_data(self):
+        data = requests.get(f"https://repl.it/data/teacher/classrooms/{self.classroom_id}/submissions",headers=headers).json()
+        self.submissions_raw_data = data
+
     def _get_submissions(self):
+        data = self.submissions_raw_data
         self._setup_for_student_submissions()
-        data = requests.get(f"https://repl.it/data/teacher/classrooms/{self.classroom_id}/submissions", headers=headers).json()
         for assignment_id in data:
             assignment = self.assignments_dict[int(assignment_id)]
             for raw_submission in data[assignment_id]:
@@ -164,22 +194,44 @@ class Classroom():
         data = requests.post(url=f"https://repl.it/data/teacher/classrooms/{self.classroom_id}/teaching_assistant_invites/create", headers=headers, data={"emails[]": email})
         return data
 
+
+def check_cookie():
+    if "ajs_user_id" in request.cookies:
+        cookie_to_return = ""
+        for cookie in request.cookies.items():
+            cookie_to_return = f"{cookie_to_return}{cookie[0]}={cookie[1]};"
+        return cookie_to_return
+    else:
+        return False
+
+
 def build_classroom(classroom_id):
     print(f"Fetching data for {classroom_id}!")
     return Classroom(classroom_id)
 
 
 def setup_classrooms(browser_cookie) -> List[Classroom]:
+    print("Getting classroom data")
     global headers
     headers = {"cookie": browser_cookie, "x-requested-with":"XMLHttpRequest", "Referer":"https://repl.it/login"}
     cookie = browser_cookie
     classrooms = []
     with concurrent.futures.ThreadPoolExecutor() as executor:
         jobs = []
-        for classroom_id in classroom_ids:
+        for classroom_id in classroom_ids + master_classroom:
             jobs.append(executor.submit(build_classroom, classroom_id))
         for job in jobs:
-            classrooms.append(job.result())
+            if job.result().classroom_id in master_classroom:
+                g.master_classroom = job.result()
+            else:
+                classrooms.append(job.result())
+        g.classrooms = classrooms
+
+        # Create dict version of classrooms to store in g
+        g.classrooms_dict = {}
+        for classroom in classrooms:
+            g.classrooms_dict[classroom.classroom_id] = classroom
+
         return classrooms
 
 

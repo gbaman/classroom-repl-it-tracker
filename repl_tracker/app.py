@@ -1,7 +1,7 @@
 import os
 import traceback
 
-from flask import Flask, render_template, request, make_response, redirect, flash
+from flask import Flask, render_template, request, make_response, redirect, flash, g
 
 import forms
 import repl
@@ -11,19 +11,9 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
 
-def check_cookie():
-    if "ajs_user_id" in request.cookies:
-        cookie_to_return = ""
-        for cookie in request.cookies.items():
-            cookie_to_return = f"{cookie_to_return}{cookie[0]}={cookie[1]};"
-        return cookie_to_return
-    else:
-        return False
-
-
 @app.route('/old_landing')
 def old_landing():
-    cookie = check_cookie()
+    cookie = repl.check_cookie()
     resp = make_response(render_template("missing_cookie.html"))
     if cookie:
         try:
@@ -37,7 +27,7 @@ def old_landing():
 
 @app.route("/")
 def home():
-    cookies = check_cookie()
+    cookies = repl.check_cookie()
     resp = make_response()
     if not cookies:
         flash("Login credentials expired, please log in again", "warning")
@@ -45,6 +35,7 @@ def home():
     else:
         try:
             classrooms = repl.setup_classrooms(cookies)
+            #repl.create_classroom("Testing321")
             return render_template("main.html", classrooms=classrooms, title="All Student Data")
         except:
             print(traceback.print_exc())
@@ -55,7 +46,7 @@ def home():
 
 @app.route("/incomplete")
 def show_only_required():
-    cookie = check_cookie()
+    cookie = repl.check_cookie()
     resp = make_response(render_template("missing_cookie.html"))
     if cookie:
         try:
@@ -79,6 +70,7 @@ def show_only_required():
             resp.set_cookie("connect.sid", "", expires=0)
     return resp
 
+
 @app.route("/login", methods=['POST', 'GET'])
 def login():
     cookie_value = request.cookies.get("repl_token")
@@ -98,6 +90,39 @@ def login():
         flash("Login failed. This may be due to issues with the credentials, or you need to log into repl.it as usual on your computer at least once.", "danger")
         return render_template("login.html", form=form, title="Login")
     return render_template("login.html", next=next, form=form, title="Login")
+
+
+@app.route("/clone", methods=['POST', 'GET'])
+def clone():
+    cookies = repl.check_cookie()
+    if not cookies:
+        flash("Login credentials expired, please log in again", "warning")
+        return redirect("/login")
+    classrooms = repl.setup_classrooms(cookies)
+
+    form = forms.CloneForm(request.form)
+    if request.method == 'POST':# and form.validate():
+        master_classroom:repl.Classroom = g.master_classroom
+        for classroom_id in form.classrooms.data:
+            classroom:repl.Classroom = g.classrooms_dict[int(classroom_id)]
+            for assignment_id in form.assignments.data:
+                assignment = g.master_classroom.assignments_dict[int(assignment_id)]
+                master_classroom.assignments_dict[assignment.assignment_id].safe_clone(classroom)
+
+        # Handle publishing from draft of new activities
+        classrooms = repl.setup_classrooms(cookies)
+        for classroom_id in form.classrooms.data:
+            classroom: repl.Classroom = g.classrooms_dict[int(classroom_id)]
+            for assignment_id in form.assignments.data:
+                assignment = g.master_classroom.assignments_dict[int(assignment_id)]
+                for classroom_assignment in classroom.assignments:
+                    if classroom_assignment.assignment_name == assignment.assignment_name:
+                        classroom_assignment.publish()
+                        break
+        flash("Clone successful", "success")
+
+
+    return render_template("clone.html", form=form, title="Clone")
 
 
 if __name__ == '__main__':

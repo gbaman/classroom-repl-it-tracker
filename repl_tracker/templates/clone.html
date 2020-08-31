@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+
+{% block content %}
+            <h2>Clone content to classrooms</h2>
+            <p>Select the classroom/s below, then the content to clone.</p>
+            <form method=post style="max-width: 220px">
+                <dl>
+                    {{ render_field(form.classrooms, class="form-control") }}
+                    {{ render_field(form.assignments, class="form-control") }}
+                </dl>
+                <p><input class="btn btn-primary" type=submit value="Clone"></p>
+            </form>
+            {%include '_message_flash_helper.html'%}
+
+{% endblock %}
