@@ -190,3 +190,8 @@ def get_login_cookie(username, password):
         return cookies
     else:
         return response.ok
+
+
+def create_classroom(name, language="python3", description="", is_public=False):
+    data = requests.post(url="https://repl.it/data/classrooms/create", headers=headers, data={"name":name, "language_key":language, "description":description, "isPublic":is_public, "image":""})
+    print(f"Classroom created with the following ID - {data.json()['id']}")
