@@ -5,10 +5,12 @@ from flask import Flask, render_template, request, make_response, redirect, flas
 
 import forms
 import repl
-from config import required_exercise_ids
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+
+
+#@app.before_request
 
 
 @app.route('/old_landing')
@@ -54,7 +56,7 @@ def show_only_required():
             for classroom in classrooms:
                 students_missing_work = []
                 for student in classroom.students:
-                    for required in required_exercise_ids:
+                    for required in g.year.required_exercise_ids:
                         for submission in student.submissions:
                             if submission.assignment.exercise_code == required:
                                 if not submission.completed:
@@ -73,6 +75,7 @@ def show_only_required():
 
 @app.route("/login", methods=['POST', 'GET'])
 def login():
+    g.year = 0
     cookie_value = request.cookies.get("repl_token")
     if cookie_value:
         valid = True
@@ -118,11 +121,31 @@ def clone():
                 for classroom_assignment in classroom.assignments:
                     if classroom_assignment.assignment_name == assignment.assignment_name:
                         classroom_assignment.publish()
+                        classroom_assignment.set_due_date(form.time_due.data)
                         break
+
         flash("Clone successful", "success")
 
-
     return render_template("clone.html", form=form, title="Clone")
+
+
+@app.route("/change_year/<year>")
+def change_year(year):
+    resp = make_response(redirect("/"))
+    resp.set_cookie('year_id', year)
+    return resp
+
+
+@app.route("/run_task")
+def run_task():
+    cookies = repl.check_cookie()
+    if not cookies:
+        flash("Login credentials expired, please log in again", "warning")
+        return redirect("/login")
+    classrooms = repl.setup_classrooms(cookies)
+    import tasks
+    tasks.add_sam()
+
 
 
 if __name__ == '__main__':

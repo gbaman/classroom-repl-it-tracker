@@ -1,10 +1,12 @@
 import concurrent.futures
+import traceback
 from typing import List
 
 import requests
 from flask import request, g
 
-from config import classroom_ids, master_classroom
+#from config import classroom_ids, master_classroom
+import config
 
 headers = {}
 
@@ -25,13 +27,19 @@ class Submission():
     @property
     def completed_symbol(self):
         if self.submission_status == "complete":
-            return "✅"
+            return "✅", "Complete"
         elif self.submission_status == "submitted":
-            return "🟡"
+            return "🔶", "Need help - Manual task"
+        elif self.submission_status == "submitted_incomplete":
+            return "🔴", "Need help - Automarked task"
+        elif self.submission_status == "sent_back":
+            return "⬅", "Task returned - Awaiting resubmission"
         elif self.important:
-            return "❌"
+            return "❌", "Requirement missing"
+        elif self.submission_status == None:
+            return "✖️", "Missing"
         else:
-            return "✖️"
+            return "⁉️", f"Unknown status... - {self.submission_status}"
 
     @property
     def completed(self):
@@ -43,7 +51,7 @@ class Submission():
 
 class Assignment():
 
-    def __init__(self, assignment_id, assignment_name, classroom, time_published):
+    def __init__(self, assignment_id, assignment_name, classroom, time_published, time_due):
         self.assignment_id = assignment_id
         self.assignment_name = assignment_name
         self.classroom: Classroom = classroom
@@ -51,6 +59,7 @@ class Assignment():
             self.draft = False
         else:
             self.draft = True
+        self.time_due = time_due
         self.submissions = []
 
     @property
@@ -76,6 +85,11 @@ class Assignment():
         else:
             print(f"Failed to publish {self.assignment_name} to {self.classroom.classroom_name} because it is already published!")
 
+    def set_due_date(self, due_date):
+        if due_date != self.time_due:
+            str_date_time = due_date.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+            data = requests.post(url=f"https://repl.it/data/teacher/assignments/{int(self.assignment_id)}]/update", headers=headers, data={"time_due": str_date_time})
+            print(data)
 
 class Student():
 
@@ -114,25 +128,35 @@ class Classroom():
         self.students: List[Student] = []
         self.filtered_students: List[Student] = []
         self.submissions: List[Submission] = []
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            jobs = []
-            jobs.append(executor.submit(self._get_details()))
-            jobs.append(executor.submit(self._get_assignments))
-            jobs.append(executor.submit(self._get_students))
-            jobs.append(executor.submit(self._get_submissions_raw_data()))
+        self.error = False
+        try:
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                jobs = []
+                jobs.append(executor.submit(self._get_details()))
+                jobs.append(executor.submit(self._get_assignments))
+                jobs.append(executor.submit(self._get_students))
+                jobs.append(executor.submit(self._get_submissions_raw_data()))
 
         #self._get_assignments()
         #self._get_students()
-        self._get_submissions()
+            self._get_submissions()
+        except Exception as e:
+            traceback.print_exc()
+            print(f"An error has occurred when trying to pull data for classroom {self.classroom_id}!")
+            self.error = True
 
     def _get_details(self):
-        data = requests.get(f"https://repl.it/data/classrooms/{self.classroom_id}", headers=headers).json()
-        self.classroom_name = data["name"]
+        data = requests.get(f"https://repl.it/data/classrooms/{self.classroom_id}", headers=headers)
+        if not data.ok:
+            raise Exception("Request failed for classroom details")
+        self.classroom_name = data.json()["name"]
 
     def _get_assignments(self):
-        data = requests.get(f"https://repl.it/data/classrooms/{self.classroom_id}/assignments", headers=headers).json()
-        for assignment in data:
-            self.assignments.append(Assignment(assignment["id"], assignment["name"], self, assignment["time_published"]))
+        data = requests.get(f"https://repl.it/data/classrooms/{self.classroom_id}/assignments", headers=headers)
+        if not data.ok:
+            raise Exception("Request failed for assignments")
+        for assignment in data.json():
+            self.assignments.append(Assignment(assignment["id"], assignment["name"], self, assignment["time_published"], assignment["time_due"]))
 
     def _setup_for_student_submissions(self):
         for student in self.students:
@@ -142,13 +166,17 @@ class Classroom():
                 student.submissions.append(submission)
 
     def _get_students(self):
-        data = requests.get(f"https://repl.it/data/teacher/classrooms/{self.classroom_id}/students", headers=headers).json()
-        for student in data:
+        data = requests.get(f"https://repl.it/data/teacher/classrooms/{self.classroom_id}/students", headers=headers)
+        if not data.ok:
+            raise Exception("Request failed for students")
+        for student in data.json():
             self.students.append(Student(student["id"], student["first_name"], student["last_name"], student["email"]))
 
     def _get_submissions_raw_data(self):
-        data = requests.get(f"https://repl.it/data/teacher/classrooms/{self.classroom_id}/submissions",headers=headers).json()
-        self.submissions_raw_data = data
+        data = requests.get(f"https://repl.it/data/teacher/classrooms/{self.classroom_id}/submissions",headers=headers)
+        if not data.ok:
+            raise Exception("Request failed for submissions")
+        self.submissions_raw_data = data.json()
 
     def _get_submissions(self):
         data = self.submissions_raw_data
@@ -190,6 +218,10 @@ class Classroom():
             return self.filtered_students
         return self.students
 
+    @property
+    def selected_students_sorted_surname(self) -> List[Student]:
+        return sorted(self.selected_students, key=lambda student: student.student_surname, reverse=False)
+
     def add_co_teacher(self, email):
         data = requests.post(url=f"https://repl.it/data/teacher/classrooms/{self.classroom_id}/teaching_assistant_invites/create", headers=headers, data={"emails[]": email})
         return data
@@ -211,17 +243,23 @@ def build_classroom(classroom_id):
 
 
 def setup_classrooms(browser_cookie) -> List[Classroom]:
+    g.years = config.years
+    year_id = request.cookies.get('year_id')
+    if not year_id:
+        year_id = 0
+    g.year = config.years[int(year_id)]
     print("Getting classroom data")
     global headers
-    headers = {"cookie": browser_cookie, "x-requested-with":"XMLHttpRequest", "Referer":"https://repl.it/login"}
+    headers = {"cookie": browser_cookie, "x-requested-with": "XMLHttpRequest", "Referer": "https://repl.it/login"}
     cookie = browser_cookie
     classrooms = []
+    year: config.YearGroup = g.year
     with concurrent.futures.ThreadPoolExecutor() as executor:
         jobs = []
-        for classroom_id in classroom_ids + master_classroom:
+        for classroom_id in year.classroom_ids + [year.master_classroom_id]:
             jobs.append(executor.submit(build_classroom, classroom_id))
         for job in jobs:
-            if job.result().classroom_id in master_classroom:
+            if job.result().classroom_id in [year.master_classroom_id]:
                 g.master_classroom = job.result()
             else:
                 classrooms.append(job.result())
