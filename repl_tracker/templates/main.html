@@ -8,7 +8,7 @@
     {% for classroom in classrooms %}
         <br>
         <hr>
-        <h2>{% if classroom.error %} Error - {{ classroom.classroom_id  }} {% else %} {{ classroom.classroom_name }} {% endif %} {% if classroom.filtered_students %} ({{ classroom.filtered_students| length }}/ {{ classroom.students | length }}) {% endif %}</h2>
+        <h2>{% if classroom.error %} Error - {{ classroom.classroom_id  }} {% else %} {{ classroom.classroom_name }} {% endif %} {% if classroom.filtered_students %} ({{ classroom.filtered_students| length }}/ {{ classroom.students | length }}) {% else %} ({{ classroom.selected_students_sorted_surname | length }}) {% endif %}</h2>
         <table>
         
         <tr>
