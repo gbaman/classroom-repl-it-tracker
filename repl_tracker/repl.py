@@ -220,7 +220,7 @@ class Classroom():
 
     @property
     def selected_students_sorted_surname(self) -> List[Student]:
-        return sorted(self.selected_students, key=lambda student: student.student_surname, reverse=False)
+        return sorted(self.selected_students, key=lambda student: student.student_surname.lower(), reverse=False)
 
     def add_co_teacher(self, email):
         data = requests.post(url=f"https://repl.it/data/teacher/classrooms/{self.classroom_id}/teaching_assistant_invites/create", headers=headers, data={"emails[]": email})
