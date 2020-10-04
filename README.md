@@ -1,5 +1,6 @@
 # Classroom Tracker for [repl.it](repl.it) Classroom
-A basic and very quickly thrown together Python Flask app to help with tracking student progress on [repl.it](repl.it) classroom across multiple classes.
+A basic and very quickly thrown together Python Flask app to help with tracking student progress on [repl.it](repl.it) classroom across multiple classes.   
+It also allows cloning batches of activities out to different classes from a master classroom.   
 
 ![](images/example1.jpg)
 
@@ -9,5 +10,5 @@ A basic and very quickly thrown together Python Flask app to help with tracking 
 3. Copy `config_example.py` to `config.py` and add in your class IDs (from repl.it URLs) and the exercises you want to track. Note exercises must follow the following format `1.1 - Name of exercise`.
 4. Launch the app with `python3 app.py`
 5. Navigate to [http://127.0.0.1:5000](http://127.0.0.1:5000/ ).
-6. Follow instructions on screen to get your cookie set up.
+6. Log in with your normal repl.it credentials.   
 
