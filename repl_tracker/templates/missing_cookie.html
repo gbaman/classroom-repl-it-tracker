@@ -9,9 +9,17 @@
 <h2>No cookie found for accessing repl.it</h2>
 <input type="button" onclick="get_cookie()" value="Click me to input cookies" />
 <br>
+<h3>Firefox Instructions</h3>
 <p>To get the cookie data, go over to repl.it, then launch developer tools (cmd or ctrl + alt + i).</p>
 <p>With the network tab selected, open a classroom and "projects" will appear in the network list. Select this.</p>
 <p>In the "request headers", find "cookie" and copy the contents of it (should start with ___cfduid).</p>
+<p>Finally hit the button above and paste in the cookie data.</p>
+
+<h3>Chrome Instructions</h3>
+<p>To get the cookie data, go over to repl.it, then launch developer tools (cmd or ctrl + alt + i).</p>
+<p>With the network tab selected, open a classroom and "projects" will appear in the network list. Select this.</p>
+<p>Select the Headers tab and scroll down to Request Headers.</p>
+<p>Find the Cookie field in the Request Headers. Copy all the entire contents of this. It will likely start with _ga= and finish with a number.</p>
 <p>Finally hit the button above and paste in the cookie data.</p>
 <script>
     
@@ -20,8 +28,12 @@
             if (repl_cookie == null || repl_cookie == "") {
                 location.reload();
             } else {
-                repl_cookie.split(";").forEach(element => document.cookie = element);
-                window.location.href ="/"
+                if (repl_cookie.includes('…')){
+                    alert("Your cookie contains a ... character! This means your browser has cut off some of the cookie.")
+                } else{
+                    repl_cookie.split(";").forEach(element => document.cookie = element);
+                    window.location.href ="/"
+                }
             } 
     }
     

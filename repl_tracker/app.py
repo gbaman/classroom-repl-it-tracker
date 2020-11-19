@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, make_response, redirect, flas
 
 import forms
 import repl
+import json
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -84,13 +85,13 @@ def login():
 
     form = forms.LoginForm(request.form)
     if request.method == 'POST' and form.validate():
-        cookies = repl.get_login_cookie(form.username.data, form.password.data)
+        cookies, response = repl.get_login_cookie(form.username.data, form.password.data)
         if cookies:
             resp = make_response(redirect('/'))
             for key in cookies.keys():
                 resp.set_cookie(str(key), str(cookies[key]))
             return resp
-        flash("Login failed. This may be due to issues with the credentials, or you need to log into repl.it as usual on your computer at least once.", "danger")
+        flash(f"Login failed. This may be due to issues with the credentials, or you need to log into repl.it as usual on your computer at least once. The error was \"{json.loads(response.text)['message']}\".", "danger")
         return render_template("login.html", form=form, title="Login")
     return render_template("login.html", next=next, form=form, title="Login")
 

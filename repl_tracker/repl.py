@@ -10,14 +10,6 @@ import config
 
 headers = {}
 
-class YearGroup():
-    def __init__(self, name, master_classroom_id, classroom_ids, required_exercise_ids):
-        self.name = name
-        self.master_classroom_id = master_classroom_id
-        self.classroom_ids = classroom_ids
-        self.required_exercise_ids = required_exercise_ids
-
-
 class Submission():
 
     def __init__(self, submission_id=None, student_id=None, assignment_id=None, submission_text=None, submission_submitted_time=None, submission_status=None):
@@ -284,9 +276,9 @@ def get_login_cookie(username, password):
     response = requests.post(url="https://repl.it/login", headers={"x-requested-with":"XMLHttpRequest", "Referer":"https://repl.it/login"}, data={"username":username, "password":password, "teacher":False})
     if response.ok:
         cookies = {"__cfduid":response.cookies.get("__cfduid"), "ajs_user_id":response.json()["id"], "connect.sid":response.cookies.get("connect.sid")}
-        return cookies
+        return cookies, response
     else:
-        return response.ok
+        return response.ok, response
 
 
 def create_classroom(name, language="python3", description="", is_public=False):
