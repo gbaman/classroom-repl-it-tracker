@@ -138,23 +138,28 @@ def change_year(year):
 @app.route("/export_assignments")
 def export_assignments():
     return "Page not enabled"
+    cookies = repl.check_cookie()
+    if not cookies:
+        flash("Login credentials expired, please log in again", "warning")
+        return redirect("/login")
+    classrooms = repl.setup_classrooms(cookies)
+    # Setup csv writer and file
     with open('data.csv', 'w', newline='') as csvfile:
         csv_writer = csv.writer(csvfile, dialect='excel-tab')
-        cookies = repl.check_cookie()
-        if not cookies:
-            flash("Login credentials expired, please log in again", "warning")
-            return redirect("/login")
-        classrooms = repl.setup_classrooms(cookies)
         for classroom in classrooms:
+            # Create blank row and classroom name row for each classroom
             csv_writer.writerow([""])
             csv_writer.writerow([classroom.classroom_name])
+            # Create assignments name row for each classroom
             assignments = ["First name", "Surname"]
             for assignment in classroom.assignments_sorted:
                 assignments.append(assignment.exercise_code)
             csv_writer.writerow(assignments)
+            # For each student in the class, create a row with their data
             for student in classroom.selected_students_sorted_surname:
                 student_row = [student.student_first_name, student.student_surname]
                 for submission in student.submissions_sorted:
+                    # Check if repl has returned a submission, if not, just add no submission
                     if submission.submission_status:
                         student_row.append(submission.submission_status)
                     else:
