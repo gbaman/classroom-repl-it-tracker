@@ -73,4 +73,6 @@ fabric.properties
 *.idea*
 
 /repl_tracker/config.py
+/repl_tracker/tasks.py
 venv/*
+/repl_tracker/data.csv

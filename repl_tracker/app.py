@@ -6,12 +6,10 @@ from flask import Flask, render_template, request, make_response, redirect, flas
 import forms
 import repl
 import json
+import csv
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
-
-
-#@app.before_request
 
 
 @app.route('/old_landing')
@@ -137,8 +135,40 @@ def change_year(year):
     return resp
 
 
+@app.route("/export_assignments")
+def export_assignments():
+    return "Page not enabled"
+    with open('data.csv', 'w', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile, dialect='excel-tab')
+        cookies = repl.check_cookie()
+        if not cookies:
+            flash("Login credentials expired, please log in again", "warning")
+            return redirect("/login")
+        classrooms = repl.setup_classrooms(cookies)
+        for classroom in classrooms:
+            csv_writer.writerow([""])
+            csv_writer.writerow([classroom.classroom_name])
+            assignments = ["First name", "Surname"]
+            for assignment in classroom.assignments_sorted:
+                assignments.append(assignment.exercise_code)
+            csv_writer.writerow(assignments)
+            for student in classroom.selected_students_sorted_surname:
+                student_row = [student.student_first_name, student.student_surname]
+                for submission in student.submissions_sorted:
+                    if submission.submission_status:
+                        student_row.append(submission.submission_status)
+                    else:
+                        student_row.append("No submission")
+                csv_writer.writerow(student_row)
+    return "A CSV file has been created with all the data titled data.csv"
+
+
+
+
+
 @app.route("/run_task")
 def run_task():
+    return "Page not enabled"
     cookies = repl.check_cookie()
     if not cookies:
         flash("Login credentials expired, please log in again", "warning")
