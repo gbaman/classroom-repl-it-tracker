@@ -4,7 +4,7 @@ import traceback
 from flask import Flask, render_template, request, make_response, redirect, flash, g
 
 import forms
-import repl
+import repl_classroom
 import json
 import csv
 
@@ -14,11 +14,11 @@ app.secret_key = os.urandom(24)
 
 @app.route('/old_landing')
 def old_landing():
-    cookie = repl.check_cookie()
+    cookie = repl_classroom.check_cookie()
     resp = make_response(render_template("missing_cookie.html"))
     if cookie:
         try:
-            classrooms = repl.setup_classrooms(cookie)
+            classrooms = repl_classroom.setup_classrooms(cookie)
             return render_template("main.html", classrooms=classrooms, title="All Student Data")
         except:
             print(traceback.print_exc())
@@ -28,14 +28,14 @@ def old_landing():
 
 @app.route("/")
 def home():
-    cookies = repl.check_cookie()
+    cookies = repl_classroom.check_cookie()
     resp = make_response()
     if not cookies:
         flash("Login credentials expired, please log in again", "warning")
         return redirect("/login")
     else:
         try:
-            classrooms = repl.setup_classrooms(cookies)
+            classrooms = repl_classroom.setup_classrooms(cookies)
             #repl.create_classroom("Testing321")
             return render_template("main.html", classrooms=classrooms, title="All Student Data")
         except:
@@ -47,11 +47,11 @@ def home():
 
 @app.route("/incomplete")
 def show_only_required():
-    cookie = repl.check_cookie()
+    cookie = repl_classroom.check_cookie()
     resp = make_response(render_template("missing_cookie.html"))
     if cookie:
         try:
-            classrooms = repl.setup_classrooms(cookie)
+            classrooms = repl_classroom.setup_classrooms(cookie)
             for classroom in classrooms:
                 students_missing_work = []
                 for student in classroom.students:
@@ -83,7 +83,7 @@ def login():
 
     form = forms.LoginForm(request.form)
     if request.method == 'POST' and form.validate():
-        cookies, response = repl.get_login_cookie(form.username.data, form.password.data)
+        cookies, response = repl_classroom.get_login_cookie(form.username.data, form.password.data)
         if cookies:
             resp = make_response(redirect('/'))
             for key in cookies.keys():
@@ -96,25 +96,25 @@ def login():
 
 @app.route("/clone", methods=['POST', 'GET'])
 def clone():
-    cookies = repl.check_cookie()
+    cookies = repl_classroom.check_cookie()
     if not cookies:
         flash("Login credentials expired, please log in again", "warning")
         return redirect("/login")
-    classrooms = repl.setup_classrooms(cookies)
+    classrooms = repl_classroom.setup_classrooms(cookies)
 
     form = forms.CloneForm(request.form)
     if request.method == 'POST':# and form.validate():
-        master_classroom:repl.Classroom = g.master_classroom
+        master_classroom:repl_classroom.Classroom = g.master_classroom
         for classroom_id in form.classrooms.data:
-            classroom:repl.Classroom = g.classrooms_dict[int(classroom_id)]
+            classroom:repl_classroom.Classroom = g.classrooms_dict[int(classroom_id)]
             for assignment_id in form.assignments.data:
                 assignment = g.master_classroom.assignments_dict[int(assignment_id)]
                 master_classroom.assignments_dict[assignment.assignment_id].safe_clone(classroom)
 
         # Handle publishing from draft of new activities
-        classrooms = repl.setup_classrooms(cookies)
+        classrooms = repl_classroom.setup_classrooms(cookies)
         for classroom_id in form.classrooms.data:
-            classroom: repl.Classroom = g.classrooms_dict[int(classroom_id)]
+            classroom: repl_classroom.Classroom = g.classrooms_dict[int(classroom_id)]
             for assignment_id in form.assignments.data:
                 assignment = g.master_classroom.assignments_dict[int(assignment_id)]
                 for classroom_assignment in classroom.assignments:
@@ -138,11 +138,11 @@ def change_year(year):
 @app.route("/export_assignments")
 def export_assignments():
     return "Page not enabled"
-    cookies = repl.check_cookie()
+    cookies = repl_classroom.check_cookie()
     if not cookies:
         flash("Login credentials expired, please log in again", "warning")
         return redirect("/login")
-    classrooms = repl.setup_classrooms(cookies)
+    classrooms = repl_classroom.setup_classrooms(cookies)
     # Setup csv writer and file
     with open('data.csv', 'w', newline='') as csvfile:
         csv_writer = csv.writer(csvfile, dialect='excel-tab')
@@ -174,11 +174,11 @@ def export_assignments():
 @app.route("/run_task")
 def run_task():
     return "Page not enabled"
-    cookies = repl.check_cookie()
+    cookies = repl_classroom.check_cookie()
     if not cookies:
         flash("Login credentials expired, please log in again", "warning")
         return redirect("/login")
-    classrooms = repl.setup_classrooms(cookies)
+    classrooms = repl_classroom.setup_classrooms(cookies)
     import tasks
     tasks.add_sam()
 

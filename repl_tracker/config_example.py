@@ -1,6 +1,6 @@
 # Rename this file to config.py first
 
-from repl import YearGroup
+from repl_classroom import YearGroup
 
 # Example below of how to define a "year group".
 # YearGroup("Year 10",      123456,           [123456, 123457, 123458, 123459],          ['1.0', '1.1', '1.2', '5.2'])
