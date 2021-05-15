@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, make_response, redirect, flas
 
 import forms
 import repl_classroom
+import repl_teams
 import json
 import csv
 
@@ -18,7 +19,7 @@ def old_landing():
     resp = make_response(render_template("missing_cookie.html"))
     if cookie:
         try:
-            classrooms = repl_classroom.setup_classrooms(cookie)
+            classrooms = repl_teams.setup_all_teams(cookie)
             return render_template("main.html", classrooms=classrooms, title="All Student Data")
         except:
             print(traceback.print_exc())
@@ -35,9 +36,9 @@ def home():
         return redirect("/login")
     else:
         try:
-            classrooms = repl_classroom.setup_classrooms(cookies)
+            teams = repl_teams.setup_all_teams(cookies)
             #repl.create_classroom("Testing321")
-            return render_template("main.html", classrooms=classrooms, title="All Student Data")
+            return render_template("main.html", classrooms=teams, title="All Student Data")
         except:
             print(traceback.print_exc())
             resp.set_cookie("ajs_user_id", "", expires=0)
