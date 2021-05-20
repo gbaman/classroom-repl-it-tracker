@@ -1,8 +1,10 @@
+from __future__ import annotations
 import concurrent.futures
 from typing import List
 import requests
 from flask import request, g
 import config
+
 
 headers = {}
 
@@ -25,6 +27,7 @@ class Submission():
         self.important = False
         self.test_results: List[TestResult] = []
         self.last_reviewed = None
+        self.url = ""
 
     @property
     def all_tests_passed(self):
@@ -50,7 +53,11 @@ class Submission():
             return "⬅", "Task returned - Awaiting resubmission"
         elif self.important:
             return "❌", "Requirement missing"
-        elif self.submission_status == None:
+        elif self.submission_id and self.submission_submitted_time:
+            return "🔜", "Legacy - Before testing"
+        elif self.submission_id and not self.submission_submitted_time:
+            return "🟨", "Working on currently"
+        elif self.submission_status == None and self.submission_id == None:
             return "✖️", "Missing"
         else:
             return "⁉️", f"Unknown status... - {self.submission_status}"
@@ -74,11 +81,18 @@ class Assignment():
         else:
             self.draft = True
         self.time_due = time_due
-        self.submissions = []
+        self.submissions: List[Submission] = []
 
     @property
     def exercise_code(self):
         return self.assignment_name.split(" - ")[0]
+
+    def get_student_submission(self, student:Student):
+        for submission in self.submissions:
+            if submission.student == student:
+                return submission
+        return Submission(None, None, None, None, None, None)
+
 
 
 class Student():
@@ -129,6 +143,7 @@ class Team():
                 new_submission.assignment = new_assignment
                 new_submission.last_reviewed = submission["timeLastReviewed"]
                 new_submission.student = self.students_dict[new_submission.student_id]
+                new_submission.url = submission["repl"]["url"]
                 new_submission.student.submissions.append(new_submission)
                 if submission["repl"]["ioTestResults"]:
                     for result in submission["repl"]["ioTestResults"]:
@@ -189,6 +204,8 @@ query Foo {
         id
         repl {
           title
+          id
+          url
         }
         submissions {
           id
