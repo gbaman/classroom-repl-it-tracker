@@ -14,3 +14,6 @@ from repl_classroom import YearGroup
 years = [YearGroup("YEAR-NAME", 123456, [123456], []),
 
          ]
+
+# If you want to ignore any users
+ignored_usernames = []

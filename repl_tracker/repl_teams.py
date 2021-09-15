@@ -106,6 +106,7 @@ class Student():
         self.student_username = student_username
         if not student_surname:
             self.student_surname = student_username
+        self.to_ignore = False
 
     @property
     def submissions_sorted(self):
@@ -137,6 +138,9 @@ class Team():
 
         for student in team_data["members"]:
             new_student = Student(student["user"]["id"], student["user"]["firstName"], student["user"]["lastName"], student["user"]["username"], student["email"])
+            if student["user"]["username"] in config.ignored_usernames:
+                new_student.to_ignore = True
+
             self.students.append(new_student)
 
         for template in team_data["templates"]:
