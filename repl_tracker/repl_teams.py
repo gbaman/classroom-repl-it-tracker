@@ -97,12 +97,15 @@ class Assignment():
 
 class Student():
 
-    def __init__(self, student_id, student_first_name, student_surname, student_email):
+    def __init__(self, student_id, student_first_name, student_surname, student_username, student_email):
         self.student_id = student_id
         self.student_first_name = student_first_name
         self.student_surname = student_surname
         self.student_email = student_email
         self.submissions: List[Submission] = []
+        self.student_username = student_username
+        if not student_surname:
+            self.student_surname = student_username
 
     @property
     def submissions_sorted(self):
@@ -133,7 +136,7 @@ class Team():
         self.team_full_name = team_data["displayName"]
 
         for student in team_data["members"]:
-            new_student = Student(student["user"]["id"], student["user"]["firstName"], student["user"]["lastName"], student["email"])
+            new_student = Student(student["user"]["id"], student["user"]["firstName"], student["user"]["lastName"], student["user"]["username"], student["email"])
             self.students.append(new_student)
 
         for template in team_data["templates"]:
@@ -247,7 +250,7 @@ def setup_all_teams(cookie):
         year_id = 0
     g.year = config.years[int(year_id)]
     global headers
-    headers = {"X-Requested-With": "true", "Origin": "https://replit.com", "cookie":cookie}
+    headers = {"X-Requested-With": "XMLHttpRequest", "Origin": "https://replit.com", "Cookie":cookie.replace("Cookie: ", "")}
     teams = []
     team_names = config.years[0].classroom_ids
 

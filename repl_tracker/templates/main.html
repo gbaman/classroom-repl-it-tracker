@@ -14,6 +14,7 @@
         <tr>
             <th>First name</th>
             <th>Surname</th>
+            <th>Username</th>
             {% for assignment in classroom.assignments_sorted %}
                 <th>{{ assignment.exercise_code }}</th>
             {% endfor %}
@@ -22,6 +23,7 @@
              <tr>
              <td width="120px"><a target="_blank" href="https://repl.it/teacher/classrooms/{{classroom.classroom_id}}/students/{{student.student_id}}">{{ student.student_first_name | capitalize }}</a></td>
              <td width="170px"><a target="_blank" href="https://repl.it/teacher/classrooms/{{classroom.classroom_id}}/students/{{student.student_id}}">{{ student.student_surname | capitalize }}</a></td>
+             <td width="170px"><a target="_blank" href="https://repl.it/teacher/classrooms/{{classroom.classroom_id}}/students/{{student.student_id}}">{{ student.student_username }}</a></td>
             {#  {% for submission in student.submissions_sorted %}
                  <td><a title="{{ submission.completed_symbol[1]}}" target="_blank" href="https://replit.com/{{ submission.url }}">{{ submission.completed_symbol[0] }}</a></td>
             {% endfor %}#}
