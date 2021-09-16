@@ -46,7 +46,7 @@ class Submission():
         if self.all_tests_passed or self.last_reviewed:
             return "✅", "Complete"
         elif self.test_results:
-            return "🔶", "Need help - Manual task"
+            return "🔶", "Need help - Manual task (but submitted)"
         elif self.submission_status == "submitted_incomplete":
             return "🔴", "Need help - Automarked task"
         elif self.submission_status == "sent_back":
@@ -54,9 +54,9 @@ class Submission():
         elif self.important:
             return "❌", "Requirement missing"
         elif self.submission_id and self.submission_submitted_time:
-            return "🔜", "Legacy - Before testing"
+            return "🔜", "Legacy - Before testing (or never run the tests, but submitted anyway)"
         elif self.submission_id and not self.submission_submitted_time:
-            return "🟨", "Working on currently"
+            return "🟨", "Working on currently (not submitted)"
         elif self.submission_status == None and self.submission_id == None:
             return "✖️", "Missing"
         else:
@@ -256,7 +256,7 @@ def setup_all_teams(cookie):
     global headers
     headers = {"X-Requested-With": "XMLHttpRequest", "Origin": "https://replit.com", "Cookie":cookie.replace("Cookie: ", "")}
     teams = []
-    team_names = config.years[0].classroom_ids
+    team_names = g.year.classroom_ids
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         jobs = []
