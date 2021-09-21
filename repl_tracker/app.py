@@ -9,6 +9,8 @@ import repl_teams
 import json
 import csv
 
+from repl_tracker import config
+
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
@@ -48,17 +50,19 @@ def home():
 
 @app.route("/incomplete")
 def show_only_required():
-    cookie = repl_classroom.check_cookie()
+    cookies = repl_classroom.check_cookie()
     resp = make_response(render_template("missing_cookie.html"))
-    if cookie:
+    if cookies:
         try:
-            classrooms = repl_classroom.setup_classrooms(cookie)
+            classrooms = repl_teams.setup_all_teams(cookies)
             for classroom in classrooms:
                 students_missing_work = []
                 for student in classroom.students:
+                    if student.student_username in config.ignored_usernames:
+                        continue
                     for required in g.year.required_exercise_ids:
                         for submission in student.submissions:
-                            if submission.assignment.exercise_code == required:
+                            if submission.assignment and submission.assignment.exercise_code == str(required):
                                 if not submission.completed:
                                     submission.important = True
                                     if student not in students_missing_work:
@@ -68,8 +72,8 @@ def show_only_required():
             return render_template("main.html", classrooms=classrooms, title="Students with incomplete work", email=True)
         except:
             print(traceback.print_exc())
-            resp.set_cookie("ajs_user_id", "", expires=0)
-            resp.set_cookie("connect.sid", "", expires=0)
+            #resp.set_cookie("ajs_user_id", "", expires=0)
+            #resp.set_cookie("connect.sid", "", expires=0)
     return resp
 
 

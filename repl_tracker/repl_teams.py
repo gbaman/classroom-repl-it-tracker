@@ -55,16 +55,16 @@ class Submission():
             return "❌", "Requirement missing"
         elif self.submission_id and self.submission_submitted_time:
             return "🔜", "Legacy - Before testing (or never run the tests, but submitted anyway)"
-        elif self.submission_id and not self.submission_submitted_time:
+        elif self.submission_id and not self.submission_submitted_time and self.submission_id != -1:
             return "🟨", "Working on currently (not submitted)"
-        elif self.submission_status == None and self.submission_id == None:
+        elif self.submission_status == None and (self.submission_id == None or self.submission_id == -1):
             return "✖️", "Missing"
         else:
             return "⁉️", f"Unknown status... - {self.submission_status}"
 
     @property
     def completed(self):
-        if self.submission_status == "complete":
+        if self.all_tests_passed or self.last_reviewed:
             return True
         else:
             return False
@@ -146,20 +146,33 @@ class Team():
 
         for template in team_data["templates"]:
             new_assignment = Assignment(template["id"], template["repl"]["title"], self, True, None)
-            for submission in template["submissions"]:
-                new_submission = Submission(submission["id"], submission["author"]["id"], new_assignment.assignment_id, None, submission["timeSubmitted"])
-                new_submission.assignment = new_assignment
-                new_submission.last_reviewed = submission["timeLastReviewed"]
-                new_submission.student = self.students_dict[new_submission.student_id]
-                new_submission.url = submission["repl"]["url"]
-                new_submission.student.submissions.append(new_submission)
-                if submission["repl"]["ioTestResults"]:
-                    for result in submission["repl"]["ioTestResults"]:
-                        new_test = TestResult(result["id"], result["status"])
-                        new_submission.test_results.append(new_test)
-                new_assignment.submissions.append(new_submission)
-            self.assignments.append(new_assignment)
 
+
+            submissions = {}
+            for submission in template["submissions"]:
+                submissions[submission["author"]["id"]] = submission
+            for student in self.students:
+                if student.student_id in submissions:
+                    # If submission exists
+                    submission = submissions[student.student_id]
+                    new_submission = Submission(submission["id"], submission["author"]["id"],new_assignment.assignment_id, None, submission["timeSubmitted"])
+                    new_submission.assignment = new_assignment
+                    new_submission.last_reviewed = submission["timeLastReviewed"]
+                    new_submission.student = self.students_dict[new_submission.student_id]
+                    new_submission.url = submission["repl"]["url"]
+
+                    if submission["repl"]["ioTestResults"]:
+                        for result in submission["repl"]["ioTestResults"]:
+                            new_test = TestResult(result["id"], result["status"])
+                            new_submission.test_results.append(new_test)
+                else:
+                    # If a submission doesn't exist, make a blank one
+                    new_submission = Submission(-1, student.student_id, new_assignment.assignment_id, None, None)
+                    new_submission.assignment = new_assignment
+                    new_submission.student = self.students_dict[new_submission.student_id]
+                new_assignment.submissions.append(new_submission)
+                student.submissions.append(new_submission)
+            self.assignments.append(new_assignment)
 
     @property
     def assignments_dict(self):
