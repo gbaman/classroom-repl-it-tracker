@@ -187,8 +187,6 @@ class Team():
 
     @property
     def selected_students_sorted_surname(self) -> List[Student]:
-        for student in self.selected_students:
-            print(f"{student.student_surname}")
         return sorted(self.selected_students, key=lambda student: student.student_surname.lower(), reverse=False)
 
 
