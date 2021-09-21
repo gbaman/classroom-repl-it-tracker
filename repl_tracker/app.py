@@ -9,7 +9,7 @@ import repl_teams
 import json
 import csv
 
-from repl_tracker import config
+import config
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
