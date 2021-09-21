@@ -94,9 +94,7 @@ class Assignment():
         return Submission(None, None, None, None, None, None)
 
 
-
 class Student():
-
     def __init__(self, student_id, student_first_name, student_surname, student_username, student_email):
         self.student_id = student_id
         self.student_first_name = student_first_name
@@ -105,7 +103,10 @@ class Student():
         self.submissions: List[Submission] = []
         self.student_username = student_username
         if not student_surname:
-            self.student_surname = student_username
+                if student_email.endswith("westminster.org.uk"):
+                    self.student_first_name, self.student_surname = student_email.split("@")[0].split(".")
+                else:
+                    self.student_surname = self.student_username
         self.to_ignore = False
 
     @property
@@ -186,6 +187,8 @@ class Team():
 
     @property
     def selected_students_sorted_surname(self) -> List[Student]:
+        for student in self.selected_students:
+            print(f"{student.student_surname}")
         return sorted(self.selected_students, key=lambda student: student.student_surname.lower(), reverse=False)
 
 
