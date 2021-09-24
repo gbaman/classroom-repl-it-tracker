@@ -103,7 +103,7 @@ class Student():
         self.submissions: List[Submission] = []
         self.student_username = student_username
         if not student_surname:
-                if student_email.endswith("westminster.org.uk"):
+                if student_email and student_email.endswith("westminster.org.uk"):
                     self.student_first_name, self.student_surname = student_email.split("@")[0].split(".")
                 else:
                     self.student_surname = self.student_username
