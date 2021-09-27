@@ -1,6 +1,6 @@
 # Rename this file to config.py first
 
-from repl_classroom import YearGroup
+from config_helper import YearGroup
 
 # Example below of how to define a "year group".
 # YearGroup("Year 10",      123456,           [123456, 123457, 123458, 123459],          ['1.0', '1.1', '1.2', '5.2'])
@@ -17,3 +17,8 @@ years = [YearGroup("YEAR-NAME", 123456, [123456], []),
 
 # If you want to ignore any users
 ignored_usernames = []
+
+# Used for email reminders for students
+email_username = ""
+email_password = ""
+email_mail_from = ""
