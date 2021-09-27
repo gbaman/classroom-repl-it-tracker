@@ -10,6 +10,7 @@ import json
 import csv
 
 import config
+from repl_tracker import helpers
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -55,20 +56,8 @@ def show_only_required():
     if cookies:
         try:
             classrooms = repl_teams.setup_all_teams(cookies)
-            for classroom in classrooms:
-                students_missing_work = []
-                for student in classroom.students:
-                    if student.student_username in config.ignored_usernames:
-                        continue
-                    for required in g.year.required_exercise_ids:
-                        for submission in student.submissions:
-                            if submission.assignment and submission.assignment.exercise_code == str(required):
-                                if not submission.completed:
-                                    submission.important = True
-                                    if student not in students_missing_work:
-                                        students_missing_work.append(student)
-                                break
-                classroom.filtered_students = students_missing_work
+            classrooms = helpers.get_students_missing_work(classrooms)
+
             return render_template("main.html", classrooms=classrooms, title="Students with incomplete work", email=True)
         except:
             print(traceback.print_exc())
