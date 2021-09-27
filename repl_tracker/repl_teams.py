@@ -24,7 +24,7 @@ class Submission():
         self.submission_submitted_time = submission_submitted_time
         self.submission_status = submission_status
         self.student = None
-        self.assignment = None
+        self.assignment: Assignment = None
         self.important = False
         self.test_results: List[TestResult] = []
         self.last_reviewed = None

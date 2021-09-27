@@ -1,5 +1,6 @@
 import os
 import traceback
+from typing import List
 
 from flask import Flask, render_template, request, make_response, redirect, flash, g
 
@@ -10,6 +11,7 @@ import json
 import csv
 
 import config
+from repl_tracker import helpers
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -55,26 +57,53 @@ def show_only_required():
     if cookies:
         try:
             classrooms = repl_teams.setup_all_teams(cookies)
-            for classroom in classrooms:
-                students_missing_work = []
-                for student in classroom.students:
-                    if student.student_username in config.ignored_usernames:
-                        continue
-                    for required in g.year.required_exercise_ids:
-                        for submission in student.submissions:
-                            if submission.assignment and submission.assignment.exercise_code == str(required):
-                                if not submission.completed:
-                                    submission.important = True
-                                    if student not in students_missing_work:
-                                        students_missing_work.append(student)
-                                break
-                classroom.filtered_students = students_missing_work
+            classrooms = helpers.get_students_missing_work(classrooms)
+
             return render_template("main.html", classrooms=classrooms, title="Students with incomplete work", email=True)
         except:
             print(traceback.print_exc())
             #resp.set_cookie("ajs_user_id", "", expires=0)
             #resp.set_cookie("connect.sid", "", expires=0)
     return resp
+
+
+@app.route("/incomplete_reminder/<team_name>")
+def send_incomplete_reminders(team_name):
+    cookies = repl_classroom.check_cookie()
+    if cookies:
+        classrooms: List[repl_teams.Team] = repl_teams.setup_all_teams(cookies)
+        classrooms = helpers.get_students_missing_work(classrooms)
+        emails_to_send = []
+        for classroom in classrooms:
+            if classroom.team_name == team_name:
+                for student in classroom.filtered_students:
+                    subject_line = f"Incomplete Computer Science Homework - {student.student_first_name.capitalize()} {student.student_surname.capitalize()}"
+                    outstanding_activities = []
+                    for submission in student.submissions_sorted:
+                        if not submission.completed and submission.important:
+                            if submission.assignment.time_due:
+                                outstanding_activities.append(f"- {submission.assignment.assignment_name} (Due {submission.assignment.time_due})")
+                            else:
+                                outstanding_activities.append(  f"- {submission.assignment.assignment_name}")
+                    outstanding_activities_str = "\n".join(outstanding_activities)
+                    body = f"""Dear {student.student_first_name.capitalize()},
+
+Our records show that you have {len(outstanding_activities)} incomplete exercise/s on replit that had been set for homework. Please see the list below for the exercises that you have outstanding.
+{outstanding_activities_str}
+
+If you are having issues with these exercises, please first discuss with your peers, or come along to Computer Science Surgery on a Wednesday lunchtime in 701 fom 13:10-13:40. 
+If neither of these are possible, please email Miss Page or Mr Mulholland for further help.
+
+- Computer Science Department
+"""
+                    #emails_to_send.append(helpers.Email(student.student_email, subject_line, body))
+                    emails_to_send.append(helpers.Email("andrew.mulholland@westminster.org.uk", subject_line, body))
+        else:
+            print(f"No classroom found by that name {team_name}")
+        helpers.send_emails(emails_to_send)
+        flash(f"Reminder emails successfully sent to {len(emails_to_send)} students!", "success")
+        return redirect("/")
+
 
 
 @app.route("/login", methods=['POST', 'GET'])
