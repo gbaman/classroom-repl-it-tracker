@@ -4,6 +4,7 @@ from typing import List
 import requests
 from flask import request, g
 import config
+from dateutil import parser
 
 
 headers = {}
@@ -72,7 +73,7 @@ class Submission():
 
 class Assignment():
 
-    def __init__(self, assignment_id, assignment_name, team, time_published, time_due):
+    def __init__(self, assignment_id, assignment_name, team, time_published, datetime_due):
         self.assignment_id = assignment_id
         self.assignment_name = assignment_name
         self.team: Team = team
@@ -80,7 +81,10 @@ class Assignment():
             self.draft = False
         else:
             self.draft = True
-        self.time_due = time_due
+        if datetime_due:
+            self.datetime_due = parser.parse(datetime_due)
+        else:
+            self.datetime_due = None
         self.submissions: List[Submission] = []
 
     @property
@@ -223,6 +227,7 @@ query Foo {
       
       templates {
         id
+        dueDate
         repl {
           title
           id
