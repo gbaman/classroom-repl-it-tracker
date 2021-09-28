@@ -81,8 +81,8 @@ def send_incomplete_reminders(team_name):
                     outstanding_activities = []
                     for submission in student.submissions_sorted:
                         if not submission.completed and submission.important:
-                            if submission.assignment.time_due:
-                                outstanding_activities.append(f"- {submission.assignment.assignment_name} (Due {submission.assignment.time_due})")
+                            if submission.assignment.datetime_due:
+                                outstanding_activities.append(f"- {submission.assignment.assignment_name} (Due {submission.assignment.datetime_due})")
                             else:
                                 outstanding_activities.append(  f"- {submission.assignment.assignment_name}")
                     outstanding_activities_str = "\n".join(outstanding_activities)
