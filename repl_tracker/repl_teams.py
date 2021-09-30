@@ -134,6 +134,7 @@ class Team():
         self.assignments: List[Assignment] = []
         self.students: List[Student] = []
         self.filtered_students: List[Student] = []
+        self.filtered = False
         self.submissions: List[Submission] = []
         self.error = False
 
@@ -198,7 +199,7 @@ class Team():
 
     @property
     def selected_students(self) -> List[Student]:
-        if self.filtered_students:
+        if self.filtered:
             return self.filtered_students
         return self.students
 

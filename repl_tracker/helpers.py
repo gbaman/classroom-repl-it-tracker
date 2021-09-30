@@ -14,6 +14,8 @@ class Email():
 def get_students_missing_work(classrooms):
     for classroom in classrooms:
         students_missing_work = []
+        classroom.filtered_students = []
+        classroom.filtered = True
         for student in classroom.students:
             if student.student_username in config.ignored_usernames:
                 continue
