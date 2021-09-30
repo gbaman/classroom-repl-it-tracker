@@ -97,7 +97,7 @@ If neither of these are possible, please email Miss Page or Mr Mulholland for fu
 - Computer Science Department
 """
                     #emails_to_send.append(helpers.Email(student.student_email, subject_line, body))
-                    emails_to_send.append(helpers.Email("andrew.mulholland@westminster.org.uk", subject_line, body))
+                    emails_to_send.append(helpers.Email(student.student_email, subject_line, body))
         else:
             print(f"No classroom found by that name {team_name}")
         helpers.send_emails(emails_to_send)
