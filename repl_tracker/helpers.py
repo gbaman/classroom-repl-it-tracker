@@ -1,6 +1,8 @@
+import datetime
 from typing import List
 
 from flask import g
+import repl_teams
 
 import config
 
@@ -11,7 +13,7 @@ class Email():
         self.mail_body = mail_body
 
 
-def get_students_missing_work(classrooms):
+def get_students_missing_work(classrooms:List[repl_teams.Team]):
     for classroom in classrooms:
         students_missing_work = []
         classroom.filtered_students = []
@@ -27,7 +29,13 @@ def get_students_missing_work(classrooms):
                             if student not in students_missing_work:
                                 students_missing_work.append(student)
                         break
-                classroom.filtered_students = students_missing_work
+            for submission in student.submissions:
+                if submission.assignment.datetime_due and submission.assignment.datetime_due.replace(tzinfo=None) < datetime.datetime.now().replace(tzinfo=None) and not submission.completed:
+                    submission.important = True
+                    if student not in students_missing_work:
+                        students_missing_work.append(student)
+
+        classroom.filtered_students = students_missing_work
     return classrooms
 
 

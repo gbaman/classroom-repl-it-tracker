@@ -1,5 +1,6 @@
 from __future__ import annotations
 import concurrent.futures
+from datetime import timezone
 from typing import List
 import requests
 from flask import request, g
@@ -83,6 +84,7 @@ class Assignment():
             self.draft = True
         if datetime_due:
             self.datetime_due = parser.parse(datetime_due)
+            #self.datetime_due.replace(tzinfo=timezone.utc)
         else:
             self.datetime_due = None
         self.submissions: List[Submission] = []
@@ -150,7 +152,7 @@ class Team():
             self.students.append(new_student)
 
         for template in team_data["templates"]:
-            new_assignment = Assignment(template["id"], template["repl"]["title"], self, True, None)
+            new_assignment = Assignment(template["id"], template["repl"]["title"], self, True, template["dueDate"])
 
 
             submissions = {}
