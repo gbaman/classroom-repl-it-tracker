@@ -117,6 +117,7 @@ class Student():
                     self.student_surname = self.student_username
         self.to_ignore = False
         self.group_name = None  # Used to store a sub-group (aka which class is the student in, in a shared Team)
+        self.hide = False
 
     @property
     def submissions_sorted(self):
@@ -131,9 +132,10 @@ class Student():
 
 
 class Group():
-    def __init__(self, group_name, students):
+    def __init__(self, group_name, students, team):
         self.group_name = group_name
         self.students: List[Student] = students
+        self.team: Team = team
         #self.filtered_students = filtered_students
 
     @property
@@ -230,7 +232,7 @@ class Team():
         group_dict = {}
         for student in self.students:
             if not student.group_name in group_dict.keys():
-                group_dict[student.group_name] = Group(student.group_name, [])
+                group_dict[student.group_name] = Group(student.group_name, [], self)
             group_dict[student.group_name].students.append(student)
         return group_dict
 

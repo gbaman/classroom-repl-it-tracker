@@ -38,7 +38,10 @@ def get_students_missing_work(classrooms:List["repl_teams.Team"]):
                     submission.important = True
                     if student not in students_missing_work:
                         students_missing_work.append(student)
-
+        for student in classroom.students:
+            student.hide = True
+        for student in students_missing_work:
+            student.hide = False
         classroom.filtered_students = students_missing_work
     return classrooms
 

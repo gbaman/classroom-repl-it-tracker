@@ -27,7 +27,7 @@
                     {% endfor %}
                 </tr>
                 {% for student in group[1].selected_students_sorted_surname %}
-                    {% if not student.to_ignore %}
+                    {% if not student.to_ignore and not student.hide %}
 
                          <tr>
                          <td width="120px">{{ student.student_first_name | capitalize }}</td>
