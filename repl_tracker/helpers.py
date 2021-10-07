@@ -16,7 +16,7 @@ class Email():
         self.mail_body = mail_body
 
 
-def get_students_missing_work(classrooms:List[repl_teams.Team]):
+def get_students_missing_work(classrooms:List["repl_teams.Team"]):
 
     for classroom in classrooms:
         students_missing_work = []
@@ -71,10 +71,8 @@ def read_csv_students(csv_path, students: List["repl_teams.Student"]):
         for line in list(csv_reader)[1:]:
             if line:
                 email_address = line[0]
-                found = False
                 for student in students:
                     if student.student_email == email_address:
-                        found = True
                         student.group_name = line[1]
                         break
     return students

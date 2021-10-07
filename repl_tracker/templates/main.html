@@ -10,9 +10,11 @@
         <br>
         <hr>
         <h2>{% if classroom.error %} Error - {{ classroom.classroom_id  }} {% else %} {{ classroom.team_full_name }} {% endif %} {% if classroom.filtered %} ({{ classroom.filtered_students| length }}/ {{ classroom.students | length }}) {% else %} ({{ classroom.selected_students_sorted_surname | length }}) {% endif %}</h2>
-        {% for group in classroom.groups %}
-            {% if group != None %}
-                <h3>{{ group }}</h3>
+        {% for group in classroom.groups.items() %}
+            {% if group[0] != None %}
+                <h3>{{ group[0] }}</h3>
+            {% else %}
+                <h3></h3>
             {% endif %}
                 <table>
 
@@ -24,7 +26,7 @@
                         <th><a title="{{assignment.datetime_due}}" >{{ assignment.exercise_code }}</a></th>
                     {% endfor %}
                 </tr>
-                {% for student in students %}
+                {% for student in group[1].selected_students_sorted_surname %}
                     {% if not student.to_ignore %}
 
                          <tr>
