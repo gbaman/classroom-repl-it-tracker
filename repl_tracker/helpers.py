@@ -1,14 +1,20 @@
+import csv
 from typing import List
 
 from flask import g
 
 import config
+import repl_teams
+
 
 class Email():
     def __init__(self, mail_to, mail_subject, mail_body):
         self.mail_to = mail_to
         self.mail_subject = mail_subject
         self.mail_body = mail_body
+
+
+
 
 
 def get_students_missing_work(classrooms):
@@ -51,3 +57,18 @@ def send_emails(emails: List[Email], username=config.email_username, password=co
     for mimemsg in mimemsgs:
         connection.send_message(mimemsg)
     connection.quit()
+
+
+def read_csv_students(csv_path, students: List["repl_teams.Student"]):
+    with open(csv_path, newline='') as csvfile:
+        csv_reader = csv.reader(csvfile, dialect='excel')
+        for line in list(csv_reader)[1:]:
+            if line:
+                email_address = line[0]
+                found = False
+                for student in students:
+                    if student.student_email == email_address:
+                        found = True
+                        student.group_name = line[1]
+                        break
+    return students

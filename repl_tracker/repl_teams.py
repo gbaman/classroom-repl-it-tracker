@@ -1,11 +1,12 @@
 from __future__ import annotations
 import concurrent.futures
-from typing import List
+from typing import List, Dict
 import requests
 from flask import request, g
 import config
 from dateutil import parser
 
+import helpers
 
 headers = {}
 
@@ -112,6 +113,7 @@ class Student():
                 else:
                     self.student_surname = self.student_username
         self.to_ignore = False
+        self.group_name = None  # Used to store a sub-group (aka which class is the student in, in a shared Team)
 
     @property
     def submissions_sorted(self):
@@ -123,6 +125,17 @@ class Student():
         for submission in self.submissions:
             submission_dict[submission.assignment_id] = submission
         return submission_dict
+
+
+class Group():
+    def __init__(self, group_name, students):
+        self.group_name = group_name
+        self.students: List[Student] = students
+        #self.filtered_students = filtered_students
+
+    @property
+    def selected_students_sorted_surname(self) -> List[Student]:
+        return sorted(self.students, key=lambda student: student.student_surname.lower(), reverse=False)
 
 
 class Team():
@@ -148,6 +161,8 @@ class Team():
                 new_student.to_ignore = True
 
             self.students.append(new_student)
+        if config.student_csv_file_path:
+            helpers.read_csv_students(config.student_csv_file_path, self.students)
 
         for template in team_data["templates"]:
             new_assignment = Assignment(template["id"], template["repl"]["title"], self, True, None)
@@ -206,6 +221,15 @@ class Team():
     @property
     def selected_students_sorted_surname(self) -> List[Student]:
         return sorted(self.selected_students, key=lambda student: student.student_surname.lower(), reverse=False)
+
+    @property
+    def groups(self)-> Dict[str, Group]:
+        group_dict = {}
+        for student in self.students:
+            if not student.group_name in group_dict.keys():
+                group_dict[student.group_name] = Group(student.group_name, [])
+            group_dict[student.group_name].students.append(student)
+        return group_dict
 
 
 main_query = """
