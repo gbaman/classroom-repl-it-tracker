@@ -1,7 +1,7 @@
 import datetime
 
 from wtforms import StringField, PasswordField, Form, validators, SelectMultipleField, DateTimeField
-from wtforms.fields.html5 import DateField
+from wtforms.fields import DateField
 from flask import g
 class LoginForm(Form):
     username = StringField("Email address", [validators.DataRequired()])
