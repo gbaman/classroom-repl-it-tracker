@@ -1,5 +1,7 @@
 from __future__ import annotations
 import concurrent.futures
+import time
+from json import JSONDecodeError
 from typing import List, Dict
 from datetime import timezone
 from typing import List
@@ -157,7 +159,21 @@ class Team():
         self.error = False
 
     def update_team_data(self):
-        team_data = run_graphql_query(main_query.replace("{", "<").replace("}", ">").replace("[", "{").replace("]", "}").format(name=self.team_name).replace("<", "{").replace(">", "}"))["data"]["team"]
+        for retry in range(0, 3):
+            try:
+                raw_team_data = run_graphql_query(main_query.replace("{", "<").replace("}", ">").replace("[", "{").replace("]", "}").format(name=self.team_name).replace("<", "{").replace(">", "}"))
+            except JSONDecodeError:
+                print(f"Json decoding error for {self.team_name}!")
+                continue
+            if "data" in raw_team_data:
+                team_data = raw_team_data["data"]["team"]
+                break
+            elif "status" in raw_team_data and raw_team_data["status"] == 503:
+                print(f"Timed out trying to get data from {self.team_name}! So far {retry + 1} attempts have been made")
+        else:
+            print(f"Given up trying to get data from {self.team_name}!")
+            team_data = {"students": [],
+                         "templates": []}
         self.team_full_name = team_data["displayName"]
 
         for student in team_data["members"]:
@@ -325,11 +341,13 @@ def setup_all_teams(cookie):
         jobs = []
         for team_name in team_names:
             jobs.append(executor.submit(build_team, team_name))
+            time.sleep(0.5)
         for job in jobs:
             teams.append(job.result())
 
     #for team_name in team_names:
     #    new_team = Team(team_name)
+    #    print(f"Fetching data for {team_name}!")
     #    new_team.update_team_data()
     #    teams.append(new_team)
     g.classrooms = teams
