@@ -13,4 +13,4 @@ COPY . /app
 WORKDIR /app
 
 # Run Gunicorn with the log file
-CMD ["/usr/local/bin/gunicorn", "-w", "2", "-b", ":8000", "--log-file", "/var/repl/app.log", "--capture-output", "app:app"]
+CMD ["/usr/local/bin/gunicorn", "-w", "2", "-t", "60", "-b", ":8000", "--log-file", "/var/repl/app.log", "--capture-output", "app:app"]
