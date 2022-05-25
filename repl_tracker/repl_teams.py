@@ -236,6 +236,20 @@ class Team():
             group_dict[student.group_name].students.append(student)
         return group_dict
 
+    @property
+    def teacher_initials(self):
+        for teacher_initial in config.teacher_initials:
+            if teacher_initial in self.team_name:
+                return teacher_initial
+        return ""
+
+    @property
+    def class_group(self):
+        if self.team_name[0].isdigit() and self.team_name[1].isalpha():
+            return self.team_name[0:2]
+        else:
+            return ""
+
 
 main_query = """
 query Foo {
