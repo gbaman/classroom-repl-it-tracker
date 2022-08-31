@@ -171,7 +171,7 @@ def change_year(year):
 
 @app.route("/export_assignments")
 def export_assignments():
-    #return "Page not enabled"
+    return "Page not enabled"
     cookies = repl_classroom.check_cookie()
     if not cookies:
         flash("Login credentials expired, please log in again", "warning")
