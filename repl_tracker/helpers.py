@@ -79,3 +79,4 @@ def read_csv_students(csv_path, students: List["repl_teams.Student"]):
                         student.group_name = line[1]
                         break
     return students
+

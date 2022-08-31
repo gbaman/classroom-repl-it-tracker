@@ -171,19 +171,19 @@ def change_year(year):
 
 @app.route("/export_assignments")
 def export_assignments():
-    return "Page not enabled"
+    #return "Page not enabled"
     cookies = repl_classroom.check_cookie()
     if not cookies:
         flash("Login credentials expired, please log in again", "warning")
         return redirect("/login")
-    classrooms = repl_classroom.setup_classrooms(cookies)
+    classrooms: List[repl_teams.Team] = repl_teams.setup_all_teams(cookies)
     # Setup csv writer and file
     with open('data.csv', 'w', newline='') as csvfile:
-        csv_writer = csv.writer(csvfile, dialect='excel-tab')
+        csv_writer = csv.writer(csvfile, dialect='excel')
         for classroom in classrooms:
             # Create blank row and classroom name row for each classroom
             csv_writer.writerow([""])
-            csv_writer.writerow([classroom.classroom_name])
+            csv_writer.writerow([classroom.team_name])
             # Create assignments name row for each classroom
             assignments = ["First name", "Surname"]
             for assignment in classroom.assignments_sorted:
@@ -193,11 +193,7 @@ def export_assignments():
             for student in classroom.selected_students_sorted_surname:
                 student_row = [student.student_first_name, student.student_surname]
                 for submission in student.submissions_sorted:
-                    # Check if repl has returned a submission, if not, just add no submission
-                    if submission.submission_status:
-                        student_row.append(submission.submission_status)
-                    else:
-                        student_row.append("No submission")
+                    student_row.append(submission.completed)
                 csv_writer.writerow(student_row)
     return "A CSV file has been created with all the data titled data.csv"
 
