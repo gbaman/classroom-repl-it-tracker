@@ -18,6 +18,9 @@ years = [YearGroup("YEAR-NAME", 123456, [123456], []),
 # If you want to ignore any users
 ignored_usernames = []
 
+# If including teacher initials in the Team name, add any teachers in the list below (used for emails)
+teacher_initials = []
+
 # Used to create subgroups in a single Team. Format should be email_address, class_name
 student_csv_file_path = ""
 
@@ -25,3 +28,4 @@ student_csv_file_path = ""
 email_username = ""
 email_password = ""
 email_mail_from = ""
+email_cced = []
