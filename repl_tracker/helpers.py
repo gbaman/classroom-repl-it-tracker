@@ -46,7 +46,7 @@ def get_students_missing_work(classrooms:List["repl_teams.Team"]):
     return classrooms
 
 
-def send_emails(emails: List[Email], username=config.email_username, password=config.email_password, mail_from=config.email_mail_from):
+def send_emails(emails: List[Email], username=config.email_username, password=config.email_password, mail_from=config.email_mail_from, cced_addresses=config.email_cced):
     import smtplib
     from email.mime.multipart import MIMEMultipart
     from email.mime.text import MIMEText
@@ -57,6 +57,7 @@ def send_emails(emails: List[Email], username=config.email_username, password=co
         mimemsg['From'] = mail_from
         mimemsg['To'] = email.mail_to
         mimemsg['Subject'] = email.mail_subject
+        mimemsg['Cc'] = ','.join(cced_addresses)
         mimemsg.attach(MIMEText(email.mail_body, 'plain'))
         mimemsgs.append(mimemsg)
 

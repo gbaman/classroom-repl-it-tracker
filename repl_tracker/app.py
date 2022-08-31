@@ -77,18 +77,18 @@ def send_incomplete_reminders(team_name):
         for classroom in classrooms:
             if classroom.team_name == team_name:
                 for student in classroom.filtered_students:
-                    subject_line = f"Incomplete Computer Science Homework - {student.student_first_name.capitalize()} {student.student_surname.capitalize()}"
+                    subject_line = f"Incomplete Computer Science Homework ({classroom.class_group} {classroom.teacher_initials}) - {student.student_first_name.capitalize()} {student.student_surname.capitalize()}"
                     outstanding_activities = []
                     for submission in student.submissions_sorted:
                         if not submission.completed and submission.important:
                             if submission.assignment.datetime_due:
-                                outstanding_activities.append(f"- {submission.assignment.assignment_name} (Due {submission.assignment.datetime_due})")
+                                outstanding_activities.append(f"- {submission.assignment.assignment_name} (Due {submission.assignment.datetime_due.strftime('%A %d/%m/%Y')})")
                             else:
                                 outstanding_activities.append(  f"- {submission.assignment.assignment_name}")
                     outstanding_activities_str = "\n".join(outstanding_activities)
                     body = f"""Dear {student.student_first_name.capitalize()},
 
-Our records show that you have {len(outstanding_activities)} incomplete exercise/s on replit that had been set for homework. Please see the list below for the exercises that you have outstanding.
+Our check on your progress has brought up that you have {len(outstanding_activities)} incomplete exercise/s on replit, that had been set for homework. Please see the list below for the exercises that you have outstanding.
 {outstanding_activities_str}
 
 If you are having issues with these exercises, please first discuss with your peers, or come along to Computer Science Surgery on a Wednesday lunchtime in 701 fom 13:10-13:40. 
