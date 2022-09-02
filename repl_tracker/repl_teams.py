@@ -1,9 +1,10 @@
 from __future__ import annotations
 import concurrent.futures
 import time
+from dataclasses import dataclass
 from json import JSONDecodeError
 from typing import List, Dict
-from datetime import timezone
+from datetime import timezone, datetime
 from typing import List
 import requests
 from flask import request, g
@@ -18,6 +19,21 @@ class TestResult():
     def __init__(self, test_id, test_status):
         self.test_id = test_id
         self.test_status = test_status
+
+
+@dataclass
+class Template():
+    id: int
+    name: str
+    assignment: Assignment
+
+
+@dataclass
+class TemplateShareLink():
+    id: int
+    code: str
+    time_created: datetime
+
 
 class Submission():
 
@@ -149,6 +165,7 @@ class Team():
     team_name = None
 
     def __init__(self, team_name):
+        self.team_id = None
         self.team_name = team_name
         self.team_full_name = ""
         self.assignments: List[Assignment] = []
@@ -175,6 +192,7 @@ class Team():
             team_data = {"students": [],
                          "templates": []}
         self.team_full_name = team_data["displayName"]
+        self.team_id = team_data["id"]
 
         for student in team_data["members"]:
             new_student = Student(student["user"]["id"], student["user"]["firstName"], student["user"]["lastName"], student["user"]["username"], student["email"])
@@ -273,6 +291,7 @@ query Foo {
   team: teamByUsername (username: "[name]") {
     ... on Team {
       displayName
+      id
       members {
         id
         email
@@ -339,11 +358,16 @@ def setup_all_teams(cookie):
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         jobs = []
+        master_jobs = []
         for team_name in team_names:
             jobs.append(executor.submit(build_team, team_name))
             time.sleep(0.5)
+        if g.year.master_team_name:
+            master_jobs.append(executor.submit(build_team, g.year.master_team_name))
         for job in jobs:
             teams.append(job.result())
+        for job in master_jobs:
+            g.master_team = job.result()
 
     #for team_name in team_names:
     #    new_team = Team(team_name)
@@ -360,6 +384,64 @@ def setup_all_teams(cookie):
 
 
 def run_graphql_query(query):
-    response = requests.post("https://replit.com/graphql", json={"query": query}, headers=headers)
-    return response.json()
+    return run_graphql_raw_query({"query": query})
 
+
+def run_graphql_raw_query(query):
+    response = requests.post("https://replit.com/graphql", json=query, headers=headers)
+    to_return = response.json()
+    return to_return
+
+
+def get_templates(team_name):
+    templates = []
+    team_data = run_graphql_query(
+        main_query.replace("{", "<").replace("}", ">").replace("[", "{").replace("]", "}").format(
+            name=team_name).replace("<", "{").replace(">", "}"))["data"]["team"]
+    for template in team_data["templates"]:
+        new_assignment = Assignment(template["id"], template["repl"]["title"],None, True, None)
+        new_template = Template(template["id"], template["repl"]["title"], new_assignment)
+        templates.append(new_template)
+    return templates, team_data["id"]
+
+
+def delete_template_share_link(team_id, template_share_link:TemplateShareLink):
+    query = {"operationName":"DeleteTemplateShareLink","variables":{"linkId":template_share_link.id,"teamId":team_id},"query":"mutation DeleteTemplateShareLink($teamId: Int!, $linkId: Int!) {\n  deleteTemplateShareLink(teamId: $teamId, linkId: $linkId) {\n    id\n    ...TemplateCopyingLinksTeam\n    __typename\n  }\n}\n\nfragment TemplateCopyingLinksTeam on Team {\n  id\n  displayName\n  templates {\n    id\n    ...TemplateCopyingTemplate\n    __typename\n  }\n  templateShareLinks {\n    id\n    ...TemplateCopyingShareLink\n    __typename\n  }\n  __typename\n}\n\nfragment TemplateCopyingTemplate on ReplTemplate {\n  id\n  url\n  repl {\n    id\n    title\n    language\n    __typename\n  }\n  __typename\n}\n\nfragment TemplateCopyingShareLink on TeamTemplateShareLink {\n  id\n  code\n  templates {\n    id\n    ...TemplateCopyingTemplate\n    __typename\n  }\n  timeCreated\n  __typename\n}\n"}
+    run_graphql_raw_query(query)
+
+
+def create_template_link(team_id, template_objs):
+    template_ids = [x.id for x in template_objs if x.assignment.exercise_code]
+    query = {"operationName":"CreateTemplateShareLink","variables":{"teamId":team_id,"templateIds":template_ids},"query":"mutation CreateTemplateShareLink($teamId: Int!, $templateIds: [Int!]!) {\n  createTemplateShareLink(teamId: $teamId, templateIds: $templateIds) {\n    id\n    ...TemplateCopyingLinksTeam\n    __typename\n  }\n}\n\nfragment TemplateCopyingLinksTeam on Team {\n  id\n  displayName\n  templates {\n    id\n    ...TemplateCopyingTemplate\n    __typename\n  }\n  templateShareLinks {\n    id\n    ...TemplateCopyingShareLink\n    __typename\n  }\n  __typename\n}\n\nfragment TemplateCopyingTemplate on ReplTemplate {\n  id\n  url\n  repl {\n    id\n    title\n    language\n    __typename\n  }\n  __typename\n}\n\nfragment TemplateCopyingShareLink on TeamTemplateShareLink {\n  id\n  code\n  templates {\n    id\n    ...TemplateCopyingTemplate\n    __typename\n  }\n  timeCreated\n  __typename\n}\n"}
+    response = run_graphql_raw_query(query)
+    raw_share_links = response["data"]['createTemplateShareLink']['templateShareLinks']
+    share_links = []
+    for raw_share_link in raw_share_links:
+        share_link = TemplateShareLink(raw_share_link["id"], raw_share_link["code"], parser.parse(raw_share_link["timeCreated"]))
+        share_links.append(share_link)
+    share_links.sort(key=lambda share_link: share_link.time_created)
+    newest_share_link = share_links[-1]
+    return newest_share_link
+
+
+def import_templates_from_template_link(template_link:TemplateShareLink, team_id, template_ids: List[int]):
+    query = {"operationName":"TemplateCopyingUseLink","variables":{"teamId":team_id,"code":template_link.code,"content":template_ids,"withDates":False},"query":"mutation TemplateCopyingUseLink($teamId: Int!, $withDates: Boolean!, $code: String!, $content: [Int!]!) {\n  useTemplateShareLink(\n    teamId: $teamId\n    withDates: $withDates\n    code: $code\n    content: $content\n  )\n}\n"}
+    response = run_graphql_raw_query(query)
+    return response
+
+
+def copy_templates_share_links(initial_team_name, destination_team_name, template_ids):
+    templates, initial_team_id = get_templates(initial_team_name)
+    _, destination_team_id = get_templates(destination_team_name)
+    share_link = create_template_link(initial_team_id, templates)
+    #template_ids = [x.id for x in templates if x.assignment.exercise_code in exercise_codes]
+    template_ids = [int(x) for x in template_ids]
+    import_templates_from_template_link(share_link, destination_team_id, template_ids)
+    delete_template_share_link(initial_team_id, share_link)
+
+
+def copy_templates(destination_team_id, template_ids):
+    for template_id in template_ids:
+        query = [{"operationName":"CopyProjectModalCopyTeamTemplate","variables":{"input":{"templateId":template_id,"destinationTeamId":destination_team_id}},"query":"mutation CopyProjectModalCopyTeamTemplate($input: CopyTeamTemplateInput!) {\n  copyTeamTemplate(input: $input) {\n    ... on Team {\n      id\n      displayName\n      __typename\n    }\n    ... on UserError {\n      message\n      __typename\n    }\n    ... on UnauthorizedError {\n      message\n      __typename\n    }\n    ... on NotFoundError {\n      message\n      __typename\n    }\n    __typename\n  }\n}\n"}]
+        response = run_graphql_raw_query(query)
+        print()

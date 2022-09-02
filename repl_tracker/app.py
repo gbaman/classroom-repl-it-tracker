@@ -134,28 +134,16 @@ def clone():
     if not cookies:
         flash("Login credentials expired, please log in again", "warning")
         return redirect("/login")
-    classrooms = repl_classroom.setup_classrooms(cookies)
+    teams = repl_teams.setup_all_teams(cookies)
+    g.teams = teams
 
     form = forms.CloneForm(request.form)
     if request.method == 'POST':# and form.validate():
-        master_classroom:repl_classroom.Classroom = g.master_classroom
-        for classroom_id in form.classrooms.data:
-            classroom:repl_classroom.Classroom = g.classrooms_dict[int(classroom_id)]
-            for assignment_id in form.assignments.data:
-                assignment = g.master_classroom.assignments_dict[int(assignment_id)]
-                master_classroom.assignments_dict[assignment.assignment_id].safe_clone(classroom)
+        #for team_name in form.teams.data:
+            #repl_teams.copy_templates_share_links(g.year.master_team_name, team_name, form.assignments.data)
 
-        # Handle publishing from draft of new activities
-        classrooms = repl_classroom.setup_classrooms(cookies)
-        for classroom_id in form.classrooms.data:
-            classroom: repl_classroom.Classroom = g.classrooms_dict[int(classroom_id)]
-            for assignment_id in form.assignments.data:
-                assignment = g.master_classroom.assignments_dict[int(assignment_id)]
-                for classroom_assignment in classroom.assignments:
-                    if classroom_assignment.assignment_name == assignment.assignment_name:
-                        classroom_assignment.publish()
-                        classroom_assignment.set_due_date(form.time_due.data)
-                        break
+        for team_id in form.teams.data:
+            repl_teams.copy_templates(team_id, form.assignments.data)
 
         flash("Clone successful", "success")
 
