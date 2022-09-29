@@ -72,17 +72,19 @@ def send_incomplete_reminders(team_name):
     cookies = repl_classroom.check_cookie()
     if cookies:
         classrooms: List[repl_teams.Team] = repl_teams.setup_all_teams(cookies)
-        classrooms = helpers.get_students_missing_work(classrooms)
+        classrooms = helpers.get_students_missing_work(classrooms, days_offset=1)
         emails_to_send = []
         for classroom in classrooms:
             if classroom.team_name == team_name:
                 for student in classroom.filtered_students:
+                    if not student.student_first_name:
+                        continue
                     subject_line = f"Incomplete Computer Science Homework ({classroom.class_group} {classroom.teacher_initials}) - {student.student_first_name.capitalize()} {student.student_surname.capitalize()}"
                     outstanding_activities = []
                     for submission in student.submissions_sorted:
                         if not submission.completed and submission.important:
                             if submission.assignment.datetime_due:
-                                outstanding_activities.append(f"- {submission.assignment.assignment_name} (Due {submission.assignment.datetime_due.strftime('%A %d/%m/%Y')})")
+                                outstanding_activities.append(f"- {submission.assignment.assignment_name} (Due {submission.assignment.datetime_due.strftime('%A %d/%m/%Y')}) | {submission.completed_symbol_without_important[1]}")
                             else:
                                 outstanding_activities.append(  f"- {submission.assignment.assignment_name}")
                     outstanding_activities_str = "\n".join(outstanding_activities)
@@ -91,8 +93,8 @@ def send_incomplete_reminders(team_name):
 Our check on your progress has brought up that you have {len(outstanding_activities)} incomplete exercise/s on replit, that had been set for homework. Please see the list below for the exercises that you have outstanding.
 {outstanding_activities_str}
 
-If you are having issues with these exercises, please first discuss with your peers, or come along to Computer Science Surgery on a Wednesday lunchtime in 701 fom 13:10-13:40. 
-If neither of these are possible, please email Miss Page or Mr Mulholland for further help.
+If you are having issues with these exercises, please first discuss with your peers. 
+If you are still stuck, please email Miss Page or Mr Mulholland for further help.
 
 - Computer Science Department
 """
@@ -100,7 +102,11 @@ If neither of these are possible, please email Miss Page or Mr Mulholland for fu
                     emails_to_send.append(helpers.Email(student.student_email, subject_line, body))
         else:
             print(f"No classroom found by that name {team_name}")
-        helpers.send_emails(emails_to_send)
+        teacher_cc_email = []
+        for teacher_cc in config.email_cced:
+            if teacher_cc[0] in team_name:
+                teacher_cc_email.append(teacher_cc[1])
+        helpers.send_emails(emails_to_send, cced_addresses=teacher_cc_email)
         flash(f"Reminder emails successfully sent to {len(emails_to_send)} students!", "success")
         return redirect("/")
 

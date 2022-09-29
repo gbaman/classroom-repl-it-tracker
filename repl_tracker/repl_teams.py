@@ -44,7 +44,7 @@ class Submission():
         self.submission_text = submission_text
         self.submission_submitted_time = submission_submitted_time
         self.submission_status = submission_status
-        self.student = None
+        self.student: Student = None
         self.assignment: Assignment = None
         self.important = False
         self.test_results: List[TestResult] = []
@@ -68,7 +68,7 @@ class Submission():
         if self.all_tests_passed or self.last_reviewed:
             return "✅", "Complete"
         elif self.test_results:
-            return "🔶", "Need help - Manual task (but submitted)"
+            return "🔶", "Submitted - All tests not passed"
         elif self.submission_status == "submitted_incomplete":
             return "🔴", "Need help - Automarked task"
         elif self.submission_status == "sent_back":
@@ -76,11 +76,11 @@ class Submission():
         elif self.important:
             return "❌", "Requirement missing"
         elif self.submission_id and self.submission_submitted_time:
-            return "🔜", "Legacy - Before testing (or never run the tests, but submitted anyway)"
+            return "🔜", "Tests not run yet"
         elif self.submission_id and not self.submission_submitted_time and self.submission_id != -1:
-            return "🟨", "Working on currently (not submitted)"
+            return "🟨", "Not submitted - All tests not passed"
         elif self.submission_status == None and (self.submission_id == None or self.submission_id == -1):
-            return "✖️", "Missing"
+            return "✖️", "Task not started - Missing"
         else:
             return "⁉️", f"Unknown status... - {self.submission_status}"
 
@@ -90,6 +90,20 @@ class Submission():
             return True
         else:
             return False
+
+
+    @property
+    def completed_symbol_without_important(self):
+        self.important = False
+        return self.completed_symbol
+
+    @property
+    def download_file_name(self):
+        return self.download_folder_name + ".zip"
+
+    @property
+    def download_folder_name(self):
+        return self.url.replace("@", "").split("/")[2]
 
 
 class Assignment():

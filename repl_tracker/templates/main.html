@@ -32,7 +32,7 @@
                          <tr>
                          <td width="120px">{{ student.student_first_name | capitalize }}</td>
                          <td width="170px">{{ student.student_surname | capitalize }}</td>
-                         <td width="170px">{{ student.student_username }}</td>
+                         <td title="{{ student.student_email }}" width="170px">{{ student.student_username }}</td>
                         {#  {% for submission in student.submissions_sorted %}
                              <td><a title="{{ submission.completed_symbol[1]}}" target="_blank" href="https://replit.com/{{ submission.url }}">{{ submission.completed_symbol[0] }}</a></td>
                         {% endfor %}#}

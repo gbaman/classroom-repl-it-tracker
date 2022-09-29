@@ -16,7 +16,7 @@ class Email():
         self.mail_body = mail_body
 
 
-def get_students_missing_work(classrooms:List["repl_teams.Team"]):
+def get_students_missing_work(classrooms:List["repl_teams.Team"], days_offset: int = 0):
 
     for classroom in classrooms:
         students_missing_work = []
@@ -34,7 +34,7 @@ def get_students_missing_work(classrooms:List["repl_teams.Team"]):
                                 students_missing_work.append(student)
                         break
             for submission in student.submissions:
-                if submission.assignment.datetime_due and submission.assignment.datetime_due.replace(tzinfo=None) < datetime.datetime.now().replace(tzinfo=None) and not submission.completed:
+                if submission.assignment.datetime_due and submission.assignment.datetime_due.replace(tzinfo=None) < datetime.datetime.now().replace(tzinfo=None) + datetime.timedelta(days=days_offset) and not submission.completed:
                     submission.important = True
                     if student not in students_missing_work:
                         students_missing_work.append(student)
