@@ -1,3 +1,4 @@
+import datetime
 import os
 import traceback
 from typing import List
@@ -27,8 +28,8 @@ def old_landing():
             return render_template("main.html", classrooms=classrooms, title="All Student Data")
         except:
             print(traceback.print_exc())
-            resp.set_cookie("ajs_user_id", "", expires=0)
-            resp.set_cookie("connect.sid", "", expires=0)
+            resp.set_cookie("ajs_user_id", "", expires=datetime.datetime.now() + datetime.timedelta(days=60))
+            resp.set_cookie("connect.sid", "", expires=datetime.datetime.now() + datetime.timedelta(days=60))
     return resp
 
 @app.route("/")
@@ -45,8 +46,8 @@ def home():
             return render_template("main.html", classrooms=teams, title="All Student Data")
         except:
             print(traceback.print_exc())
-            resp.set_cookie("ajs_user_id", "", expires=0)
-            resp.set_cookie("connect.sid", "", expires=0)
+            resp.set_cookie("ajs_user_id", "", expires=datetime.datetime.now() + datetime.timedelta(days=60))
+            resp.set_cookie("connect.sid", "", expires=datetime.datetime.now() + datetime.timedelta(days=60))
 
 
 
@@ -93,8 +94,7 @@ def send_incomplete_reminders(team_name):
 Our check on your progress has brought up that you have {len(outstanding_activities)} incomplete exercise/s on replit, that had been set for homework. Please see the list below for the exercises that you have outstanding.
 {outstanding_activities_str}
 
-If you are having issues with these exercises, please first discuss with your peers. 
-If you are still stuck, please email Miss Page or Mr Mulholland for further help.
+If you are having issues with these exercises, please email Miss Page or Mr Mulholland for further help.
 
 - Computer Science Department
 """
@@ -127,7 +127,7 @@ def login():
         if cookies:
             resp = make_response(redirect('/'))
             for key in cookies.keys():
-                resp.set_cookie(str(key), str(cookies[key]))
+                resp.set_cookie(str(key), str(cookies[key]), expires=datetime.datetime.now() + datetime.timedelta(days=60))
             return resp
         flash(f"Login failed. This may be due to issues with the credentials, or you need to log into repl.it as usual on your computer at least once. The error was \"{json.loads(response.text)['message']}\".", "danger")
         return render_template("login.html", form=form, title="Login")

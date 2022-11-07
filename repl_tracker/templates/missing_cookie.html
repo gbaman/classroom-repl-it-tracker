@@ -31,7 +31,11 @@
                 if (repl_cookie.includes('…')){
                     alert("Your cookie contains a ... character! This means your browser has cut off some of the cookie.")
                 } else{
-                    repl_cookie.split(";").forEach(element => document.cookie = element);
+                    const d = new Date();
+                    const days = 60;
+                    d.setTime(d.getTime() + (days*24*60*60*1000));
+                    let expires = "expires="+ d.toUTCString();
+                    repl_cookie.split(";").forEach(element => document.cookie = element + ";" + expires);
                     window.location.href ="/"
                 }
             } 
