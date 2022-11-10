@@ -1,7 +1,9 @@
 import csv
 import datetime
+import tempfile
 from typing import List
 
+import requests
 from flask import g
 import repl_teams
 
@@ -70,7 +72,15 @@ def send_emails(emails: List[Email], username=config.email_username, password=co
 
 
 def read_csv_students(csv_path, students: List["repl_teams.Student"]):
-    with open(csv_path, newline='') as csvfile:
+    with tempfile.NamedTemporaryFile() as tmp:
+        if "http" in csv_path:
+            data = requests.get(csv_path)
+            tmp.write(data.content)
+            csvfile = tmp
+        else:
+            raise Exception("URL not found in CSV file!")
+            #tmp = csv_path
+        #with open(tmp.name, newline='') as csvfile:
         csv_reader = csv.reader(csvfile, dialect='excel')
         for line in list(csv_reader)[1:]:
             if line:
@@ -79,5 +89,5 @@ def read_csv_students(csv_path, students: List["repl_teams.Student"]):
                     if student.student_email == email_address:
                         student.group_name = line[1]
                         break
-    return students
+        return students
 
