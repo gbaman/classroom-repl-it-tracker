@@ -74,11 +74,8 @@ def send_emails(emails: List[Email], username=config.email_username, password=co
 def read_csv_students(csv_path, students: List["repl_teams.Student"]):
     with requests.Session() as s:
         download = s.get(csv_path)
-
         decoded_content = download.content.decode('utf-8')
-
         csv_reader = csv.reader(decoded_content.splitlines(), delimiter=',', dialect='excel')
-        #csv_reader = csv.reader(csvfile, dialect='excel')
         for line in list(csv_reader)[1:]:
             if line:
                 email_address = line[0]
