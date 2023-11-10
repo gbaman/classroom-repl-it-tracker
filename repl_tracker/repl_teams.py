@@ -139,7 +139,10 @@ class Student():
         self.student_id = student_id
         self.student_first_name = student_first_name
         self.student_surname = student_surname
-        self.student_email = student_email
+        if student_email:
+            self.student_email = student_email.lower()
+        else:
+            self.student_email = None
         self.submissions: List[Submission] = []
         self.student_username = student_username
         if not student_surname:
@@ -205,6 +208,8 @@ class Team():
             print(f"Given up trying to get data from {self.team_name}!")
             team_data = {"students": [],
                          "templates": []}
+        if "displayName" not in team_data:
+            return
         self.team_full_name = team_data["displayName"]
         self.team_id = team_data["id"]
 
@@ -351,6 +356,19 @@ query Foo {
 
 """
 
+
+def get_teams_login_cookie(username, password, h_captcha_response):
+    login_data = {"username": username, "password": password, "hCaptchaResponse": h_captcha_response, "hCaptchaSiteKey": config.hcaptcha_site_key}
+    headers = {"x-requested-with": "XMLHttpRequest", "Referer": "https://repl.it/login"}
+    response = requests.post("https://replit.com/login", data=login_data, headers=headers)
+    #login_cookie = login_response.headers["Set-Cookie"]
+    if response.ok:
+        cookies = {"__cfduid": response.cookies.get("__cfduid"), "ajs_user_id": response.json()["id"],
+                   "connect.sid": response.cookies.get("connect.sid")}
+        return cookies, response
+    else:
+        return response.ok, response
+
 def build_team(team_id):
     print(f"Fetching data for {team_id}!")
     new_team = Team(team_id)
@@ -394,7 +412,13 @@ def setup_all_teams(cookie):
     for team in teams:
         g.classrooms_dict[team.team_name] = team
     g.teams_dict = g.classrooms_dict
-    return teams
+    for team in teams:
+        if team.students:
+            return teams, True
+
+    # If no students are found, fail
+    raise Exception("No students found! Cookie must have expired!")
+    return teams, False
 
 
 def run_graphql_query(query):

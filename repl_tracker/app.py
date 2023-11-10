@@ -24,7 +24,7 @@ def old_landing():
     resp = make_response(render_template("missing_cookie.html"))
     if cookie:
         try:
-            classrooms = repl_teams.setup_all_teams(cookie)
+            classrooms, status = repl_teams.setup_all_teams(cookie)
             return render_template("main.html", classrooms=classrooms, title="All Student Data")
         except:
             print(traceback.print_exc())
@@ -41,13 +41,14 @@ def home():
         return redirect("/login")
     else:
         try:
-            teams = repl_teams.setup_all_teams(cookies)
+            teams, status = repl_teams.setup_all_teams(cookies)
             #repl.create_classroom("Testing321")
             return render_template("main.html", classrooms=teams, title="All Student Data")
         except:
             print(traceback.print_exc())
             resp.set_cookie("ajs_user_id", "", expires=datetime.datetime.now() + datetime.timedelta(days=60))
             resp.set_cookie("connect.sid", "", expires=datetime.datetime.now() + datetime.timedelta(days=60))
+            return redirect("/login")
 
 
 
@@ -57,7 +58,7 @@ def show_only_required():
     resp = make_response(render_template("missing_cookie.html"))
     if cookies:
         try:
-            classrooms = repl_teams.setup_all_teams(cookies)
+            classrooms, status = repl_teams.setup_all_teams(cookies)
             classrooms = helpers.get_students_missing_work(classrooms)
 
             return render_template("main.html", classrooms=classrooms, title="Students with incomplete work", email=True)
@@ -72,7 +73,7 @@ def show_only_required():
 def send_incomplete_reminders(team_name):
     cookies = repl_classroom.check_cookie()
     if cookies:
-        classrooms: List[repl_teams.Team] = repl_teams.setup_all_teams(cookies)
+        classrooms, status = repl_teams.setup_all_teams(cookies)
         classrooms = helpers.get_students_missing_work(classrooms, days_offset=1)
         emails_to_send = []
         for classroom in classrooms:
@@ -123,7 +124,8 @@ def login():
 
     form = forms.LoginForm(request.form)
     if request.method == 'POST' and form.validate():
-        cookies, response = repl_classroom.get_login_cookie(form.username.data, form.password.data)
+        captcha_key = request.form.get('h-captcha-response')
+        cookies, response = repl_teams.get_teams_login_cookie(form.username.data, form.password.data, captcha_key)
         if cookies:
             resp = make_response(redirect('/'))
             for key in cookies.keys():
@@ -140,7 +142,7 @@ def clone():
     if not cookies:
         flash("Login credentials expired, please log in again", "warning")
         return redirect("/login")
-    teams = repl_teams.setup_all_teams(cookies)
+    teams, status = repl_teams.setup_all_teams(cookies)
     g.teams = teams
 
     form = forms.CloneForm(request.form)
@@ -170,7 +172,7 @@ def export_assignments():
     if not cookies:
         flash("Login credentials expired, please log in again", "warning")
         return redirect("/login")
-    classrooms: List[repl_teams.Team] = repl_teams.setup_all_teams(cookies)
+    classrooms, status = repl_teams.setup_all_teams(cookies)
     # Setup csv writer and file
     with open('data.csv', 'w', newline='') as csvfile:
         csv_writer = csv.writer(csvfile, dialect='excel')

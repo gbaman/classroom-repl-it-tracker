@@ -29,3 +29,7 @@ email_username = ""
 email_password = ""
 email_mail_from = ""
 email_cced = []
+
+# Needed for use with replit captcha login. Not needed if using the old login method (copying cookies).
+# This key may be updated by replit now and then, so check the login page for the latest key.
+hcaptcha_site_key = "473079ba-e99f-4e25-a635-e9b661c7dd3e"

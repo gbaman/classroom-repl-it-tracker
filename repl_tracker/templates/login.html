@@ -7,6 +7,7 @@
                 <dl>
                     {{ render_field(form.username, class="form-control") }}
                     {{ render_field(form.password, class="form-control") }}
+                    <div class="h-captcha" id="captcha" data-sitekey="473079ba-e99f-4e25-a635-e9b661c7dd3e"></div>
                 </dl>
                 <p><input class="btn btn-primary" type=submit value="Login"></p>
                 <input type=hidden value="{{ next or '' }}" name=next>
