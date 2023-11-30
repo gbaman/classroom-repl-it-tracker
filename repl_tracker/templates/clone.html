@@ -1,11 +1,11 @@
 {% extends "layout.html" %}
 
 {% block content %}
-            <h2>Clone content to classrooms</h2>
-            <p>Select the classroom/s below, then the content to clone.</p>
+            <h2>Clone content to teams</h2>
+            <p>Select the team/s below, then the content to clone.</p>
             <form method=post style="max-width: 220px">
                 <dl>
-                    {{ render_field(form.classrooms, class="form-control") }}
+                    {{ render_field(form.teams, class="form-control") }}
                     {{ render_field(form.assignments, class="form-control") }}
                     {{ render_field(form.time_due, class="form-control") }}
                 </dl>

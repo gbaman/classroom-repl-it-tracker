@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 
 {% block content %}
+    {%include '_message_flash_helper.html'%}
     <h1>{{ title }}</h1>
     
     <input type="button" onclick="location.href='/';" value="All students" />
@@ -8,33 +9,49 @@
     {% for classroom in classrooms %}
         <br>
         <hr>
-        <h2>{% if classroom.error %} Error - {{ classroom.classroom_id  }} {% else %} {{ classroom.classroom_name }} {% endif %} {% if classroom.filtered_students %} ({{ classroom.filtered_students| length }}/ {{ classroom.students | length }}) {% else %} ({{ classroom.selected_students_sorted_surname | length }}) {% endif %}</h2>
-        <table>
-        
-        <tr>
-            <th>First name</th>
-            <th>Surname</th>
-            {% for assignment in classroom.assignments_sorted %}
-                <th>{{ assignment.exercise_code }}</th>
-            {% endfor %}
-        </tr>
-        {% for student in classroom.selected_students_sorted_surname %}
-             <tr>
-             <td width="120px"><a target="_blank" href="https://repl.it/teacher/classrooms/{{classroom.classroom_id}}/students/{{student.student_id}}">{{ student.student_first_name | capitalize }}</a></td>
-             <td width="170px"><a target="_blank" href="https://repl.it/teacher/classrooms/{{classroom.classroom_id}}/students/{{student.student_id}}">{{ student.student_surname | capitalize }}</a></td>
-            {% for submission in student.submissions_sorted %}
-                 <td><a title="{{ submission.completed_symbol[1]}}" target="_blank" href="https://repl.it/teacher/submissions/{{ submission.submission_id }}">{{ submission.completed_symbol[0] }}</a></td>
-            {% endfor %}
-             </tr>
+        <h2>{% if classroom.error %} Error - {{ classroom.classroom_id  }} {% else %} {{ classroom.team_full_name }} {% endif %} {% if classroom.filtered %} ({{ classroom.filtered_students| length }}/ {{ classroom.students | length }}) {% else %} ({{ classroom.selected_students_sorted_surname | length }}) {% endif %}</h2>
+        {% for group in classroom.groups.items() %}
+            {% if group[0] != None %}
+                <h3>{{ group[0] }}</h3>
+            {% else %}
+                <h3></h3>
+            {% endif %}
+                <table>
+
+                <tr>
+                    <th>First name</th>
+                    <th>Surname</th>
+                    <th>Username</th>
+                    {% for assignment in classroom.assignments_sorted %}
+                        <th><a title="{{assignment.datetime_due}}" >{{ assignment.exercise_code }}</a></th>
+                    {% endfor %}
+                </tr>
+                {% for student in group[1].selected_students_sorted_surname %}
+                    {% if not student.to_ignore and not student.hide %}
+
+                         <tr>
+                         <td width="120px">{{ student.student_first_name | capitalize }}</td>
+                         <td width="170px">{{ student.student_surname | capitalize }}</td>
+                         <td title="{{ student.student_email }}" width="170px">{{ student.student_username }}</td>
+                        {#  {% for submission in student.submissions_sorted %}
+                             <td><a title="{{ submission.completed_symbol[1]}}" target="_blank" href="https://replit.com/{{ submission.url }}">{{ submission.completed_symbol[0] }}</a></td>
+                        {% endfor %}#}
+                           {% for assignment in classroom.assignments_sorted %}
+                                {% set found_submission = assignment.get_student_submission(student) %}
+                                <td><a title="{{ found_submission.completed_symbol[1]}}" target="_blank" href="https://replit.com{{ found_submission.url }}">{{ found_submission.completed_symbol[0] }}</a></td>
+                        {% endfor %}
+                         </tr>
+                    {% endif %}
+                {% endfor %}
+                {% if email %}
+                    <h4>Email addresses</h4>
+                    <p>
+                    {% for student in classroom.selected_students %}
+                        {{ student.student_email }};
+                    {% endfor %}
+                    </p>
+                {% endif %}
+                </table>
         {% endfor %}
-        {% if email %}
-            <h4>Email addresses</h4>
-            <p>
-            {% for student in classroom.selected_students %}
-                {{ student.student_email }};
-            {% endfor %}
-            </p>
-        {% endif %}
-        </table>
     {% endfor %}
 {% endblock %}

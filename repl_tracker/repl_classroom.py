@@ -1,3 +1,8 @@
+# Legacy - Not used anymore.
+# Previous used with the old repl classroom product.
+# Been replaced with repl_teams.py
+
+
 import concurrent.futures
 import traceback
 from typing import List
