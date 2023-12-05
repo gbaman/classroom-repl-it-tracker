@@ -70,7 +70,8 @@ def show_only_required():
 
 
 @app.route("/incomplete_reminder/<team_name>")
-def send_incomplete_reminders(team_name):
+@app.route("/incomplete_reminder/<team_name>/<dry_run>")
+def send_incomplete_reminders(team_name, dry_run=False):
     cookies = repl_classroom.check_cookie()
     if cookies:
         classrooms, status = repl_teams.setup_all_teams(cookies)
@@ -95,7 +96,7 @@ def send_incomplete_reminders(team_name):
 Our check on your progress has brought up that you have {len(outstanding_activities)} incomplete exercise/s on replit, that had been set for homework. Please see the list below for the exercises that you have outstanding.
 {outstanding_activities_str}
 
-If you are having issues with these exercises, please email Miss Page or Mr Mulholland for further help.
+If you are having issues with these exercises, please email your teacher for further help.
 
 - Computer Science Department
 """
@@ -107,7 +108,10 @@ If you are having issues with these exercises, please email Miss Page or Mr Mulh
         for teacher_cc in config.email_cced:
             if teacher_cc[0] in team_name:
                 teacher_cc_email.append(teacher_cc[1])
-        helpers.send_emails(emails_to_send, cced_addresses=teacher_cc_email)
+        if dry_run:
+            return render_template("email_preview.html", emails=emails_to_send, title=f"Email Preview - {team_name}", teacher_cc_email=teacher_cc_email, team_name=team_name)
+        else:
+            helpers.send_emails(emails_to_send, cced_addresses=teacher_cc_email)
         flash(f"Reminder emails successfully sent to {len(emails_to_send)} students!", "success")
         return redirect("/")
 

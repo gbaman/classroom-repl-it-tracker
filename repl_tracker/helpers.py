@@ -17,6 +17,11 @@ class Email():
         self.mail_subject = mail_subject
         self.mail_body = mail_body
 
+    @property
+    def email_body_html(self):
+        return self.mail_body.replace("\n", "<br>")
+
+
 
 def get_students_missing_work(classrooms:List["repl_teams.Team"], days_offset: int = 0):
 

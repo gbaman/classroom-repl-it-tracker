@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+
+{% block content %}
+    {%include '_message_flash_helper.html'%}
+    <h1>{{ title }}</h1>
+    <a href="/" class="btn btn-primary">Back to classes</a> <a href="/incomplete_reminder/{{ team_name }}" class="btn btn-danger">Send email/s below</a>
+    <hr>
+    <table>
+    {% for email in emails %}
+        <p>{{ email.mail_to }}</p>
+        <p><b>{{ email.mail_subject}}</b></p>
+        <p>{{ email.email_body_html | safe  }}</p>
+        <hr>
+    {% endfor %}
+    </table>
+{% endblock %}
